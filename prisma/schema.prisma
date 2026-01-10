@@ -1,0 +1,308 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  SECRETARY
+  SUPER_ADMIN
+  TEACHER
+}
+
+enum InscriptionType {
+  SOUTIEN
+  FORMATION
+}
+
+model User {
+  id            Int      @id @default(autoincrement())
+  email         String   @unique
+  password      String
+  role          UserRole
+  name          String
+  avatar        String?  // Base64 encoded image or URL
+  gsm           String?
+  whatsapp      String?
+  address       String?
+  schoolLevel   String?
+  certification String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("users")
+}
+
+model Student {
+  id            Int       @id @default(autoincrement())
+  name          String
+  surname       String
+  phone         String?
+  email         String?
+  cin           String?
+  address       String?
+  birthDate     DateTime?
+  birthPlace    String?
+  fatherName    String?
+  motherName    String?
+  parentName    String?
+  parentPhone   String?
+  parentRelation String?
+  schoolLevel   String?
+  currentSchool String?
+  subjects      Json?
+  photo         String? // Base64 encoded image or file path
+  active        Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  inscriptions Inscription[]
+  payments     Payment[]
+  attendances  Attendance[]
+  
+  groups       Group[]
+
+  @@map("students")
+}
+
+model Group {
+  id            Int      @id @default(autoincrement())
+  name          String
+  type          InscriptionType @default(SOUTIEN) 
+  
+  // Soutien fields
+  level         String? // e.g. LYCEE
+  subject       String? // e.g. MATHS
+
+  // Formation fields
+  formationId   Int?
+  formation     Formation? @relation(fields: [formationId], references: [id])
+
+  courseId      Int?
+  course        Course? @relation(fields: [courseId], references: [id])
+
+  room          String?
+  whatsappUrl   String?
+  
+  teacherId     Int?
+  teacher       Teacher? @relation(fields: [teacherId], references: [id])
+  
+  students      Student[]
+  
+  timeSlots     Json? // [{ day: string, startTime: string, endTime: string }]
+
+  sessions      Session[]
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("groups")
+}
+
+model Teacher {
+  id            Int      @id @default(autoincrement())
+  name          String
+  email         String?  @unique
+  phone         String?
+  cin           String?
+  dob           DateTime?
+  gender        String?
+  picture       String?
+  status        String   @default("Active")
+  password      String?  // For login
+  socialMedia   Json?    // { linkedin, twitter, facebook, whatsapp }
+  
+  hourlyRate    Float    @default(0)
+  paymentType   String   @default("HOURLY") // HOURLY, FIXED, PERCENTAGE
+  commission    Float?   // For percentage based payment
+  
+  specialties   String[] // Subjects
+  levels        String[] // Levels
+
+  groups        Group[]
+  courses       Course[]
+  sessions      Session[]
+  notificationsSent Notification[] @relation("NotificationSender")
+  notificationsReceived Notification[] @relation("NotificationReceiver")
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("teachers")
+}
+
+model Inscription {
+  id        Int             @id @default(autoincrement())
+  studentId Int
+  student   Student         @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  type      InscriptionType
+  category  String
+  amount    Float
+  date      DateTime        @default(now())
+  note      String?
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@map("inscriptions")
+}
+
+model Payment {
+  id        Int      @id @default(autoincrement())
+  studentId Int
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  amount    Float
+  method    String
+  note      String?
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("payments")
+}
+
+model Attendance {
+  id        Int      @id @default(autoincrement())
+  sessionId Int
+  session   Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  studentId Int
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  status    String // present / absent
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("attendances")
+}
+
+model Settings {
+  id           Int      @id @default(autoincrement())
+  schoolName   String
+  logo         String?
+  academicYear String
+  contactInfo  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("settings")
+}
+
+model Formation {
+  id          Int      @id @default(autoincrement())
+  name        String
+  duration    String
+  price       Float
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  groups      Group[]
+
+  @@map("formations")
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+}
+
+
+model Transaction {
+  id          Int             @id @default(autoincrement())
+  type        TransactionType
+  amount      Float
+  category    String
+  description String?
+  date        DateTime        @default(now())
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@map("transactions")
+}
+
+model Pricing {
+  id          Int      @id @default(autoincrement())
+  category    String   // SOUTIEN, FORMATION
+  level       String   // LYCÉE, COLLÈGE, etc.
+  subject     String   // MATHS, PHYSIQUE, etc.
+  price       Float    @default(0)
+  description String?
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("pricing")
+}
+
+model Course {
+  id        Int      @id @default(autoincrement())
+  name      String   // Subject name
+  teacherId Int
+  teacher   Teacher  @relation(fields: [teacherId], references: [id])
+  groups    Group[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("courses")
+}
+
+model Room {
+  id        Int      @id @default(autoincrement())
+  name      String
+  capacity  Int?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions  Session[]
+
+  @@map("rooms")
+}
+
+model Session {
+  id        Int      @id @default(autoincrement())
+  date      DateTime
+  startTime String
+  endTime   String
+  groupId   Int
+  group     Group    @relation(fields: [groupId], references: [id])
+  teacherId Int
+  teacher   Teacher  @relation(fields: [teacherId], references: [id])
+  roomId    Int
+  room      Room     @relation(fields: [roomId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  attendances Attendance[]
+
+  @@map("sessions")
+}
+
+enum NotificationType {
+  ALERT
+  ANNOUNCEMENT
+  REPORT
+}
+
+model Notification {
+  id          Int              @id @default(autoincrement())
+  title       String
+  message     String
+  type        NotificationType
+  senderId    Int
+  senderType  String           // 'user' or 'teacher'
+  receiverId  Int?
+  receiverType String?         // 'user' or 'teacher', null for broadcast
+  isRead      Boolean          @default(false)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  senderTeacher   Teacher?     @relation("NotificationSender", fields: [senderId], references: [id])
+  receiverTeacher Teacher?     @relation("NotificationReceiver", fields: [receiverId], references: [id])
+
+  @@map("notifications")
+}
