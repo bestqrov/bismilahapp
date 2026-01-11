@@ -1,4 +1,5 @@
 import prisma from '../../config/database';
+import { NotificationType } from '@prisma/client';
 
 export const getTeacherGroups = async (teacherId: number) => {
     return await prisma.group.findMany({
@@ -125,7 +126,7 @@ export const getNotifications = async (teacherId: number) => {
 export const sendNotification = async (data: {
     title: string;
     message: string;
-    type: string;
+    type: NotificationType;
     senderId: number;
     receiverType?: string;
     receiverId?: number;

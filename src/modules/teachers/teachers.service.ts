@@ -36,14 +36,14 @@ export const getAllTeachers = async () => {
 
 export const updateTeacher = async (id: string, data: Partial<CreateTeacherData>) => {
     return await prisma.teacher.update({
-        where: { id },
+        where: { id: parseInt(id) },
         data
     });
 };
 
 export const deleteTeacher = async (id: string) => {
     return await prisma.teacher.delete({
-        where: { id }
+        where: { id: parseInt(id) }
     });
 };
 

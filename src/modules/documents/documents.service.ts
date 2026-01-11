@@ -24,7 +24,7 @@ export const getStudentsForDocuments = async () => {
 
 export const getStudentDocument = async (studentId: string) => {
     const student = await prisma.student.findUnique({
-        where: { id: studentId },
+        where: { id: parseInt(studentId) },
         include: {
             inscriptions: {
                 orderBy: {

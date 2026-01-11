@@ -38,14 +38,14 @@ export const createGroup = async (data: CreateGroupData) => {
             type: data.type,
             level: data.level,
             subject: data.subject,
-            formationId: data.formationId || undefined,
-            teacherId: data.teacherId || undefined,
+            formationId: data.formationId ? parseInt(data.formationId) : undefined,
+            teacherId: data.teacherId ? parseInt(data.teacherId) : undefined,
             room: data.room,
             whatsappUrl: data.whatsappUrl,
             timeSlots: data.timeSlots,
             // Connect existing students
             students: {
-                connect: data.studentIds?.map(id => ({ id })) || []
+                connect: data.studentIds?.map(id => ({ id: parseInt(id) })) || []
             }
         },
         include: {
@@ -77,7 +77,7 @@ export const getAllGroups = async (type?: InscriptionType) => {
 
 export const getGroupById = async (id: string) => {
     const group = await prisma.group.findUnique({
-        where: { id },
+        where: { id: parseInt(id) },
         include: {
             teacher: true,
             students: true,
@@ -91,13 +91,13 @@ export const getGroupById = async (id: string) => {
 
 export const updateGroup = async (id: string, data: UpdateGroupData) => {
     return await prisma.group.update({
-        where: { id },
+        where: { id: parseInt(id) },
         data: {
             ...data,
-            formationId: data.formationId || undefined,
-            teacherId: data.teacherId || undefined,
+            formationId: data.formationId ? parseInt(data.formationId) : undefined,
+            teacherId: data.teacherId ? parseInt(data.teacherId) : undefined,
             students: data.studentIds ? {
-                set: data.studentIds.map(sid => ({ id: sid }))
+                set: data.studentIds.map(sid => ({ id: parseInt(sid) }))
             } : undefined
         },
         include: {
@@ -110,6 +110,6 @@ export const updateGroup = async (id: string, data: UpdateGroupData) => {
 
 export const deleteGroup = async (id: string) => {
     return await prisma.group.delete({
-        where: { id }
+        where: { id: parseInt(id) }
     });
 };

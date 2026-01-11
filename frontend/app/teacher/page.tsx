@@ -66,17 +66,23 @@ export default function TeacherDashboard() {
     return (
         <div className="space-y-8">
             {/* Welcome Section */}
-            <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 rounded-2xl p-8 text-white shadow-2xl">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold mb-2">Tableau de Bord Professeur</h1>
-                        <p className="text-blue-100 text-lg">Gérez vos cours et suivez vos élèves</p>
-                    </div>
-                    <div className="hidden md:flex items-center space-x-4">
-                        <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
-                            <div className="flex items-center space-x-2">
-                                <Award className="w-6 h-6 text-yellow-300" />
-                                <span className="text-sm font-medium">Excellent Professeur</span>
+            <div className="relative rounded-2xl overflow-hidden shadow-2xl min-h-[200px]">
+                <div 
+                    className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+                    style={{ backgroundImage: 'url(/tdb.png)' }}
+                ></div>
+                <div className="relative z-10 bg-gradient-to-r from-black/60 via-purple-900/60 to-blue-900/60 p-8 text-white">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h1 className="text-3xl font-bold mb-2">Tableau de Bord Professeur</h1>
+                            <p className="text-blue-100 text-lg">Gérez vos cours et suivez vos élèves</p>
+                        </div>
+                        <div className="hidden md:flex items-center space-x-4">
+                            <div className="bg-white/10 backdrop-blur-sm rounded-xl p-4">
+                                <div className="flex items-center space-x-2">
+                                    <Award className="w-6 h-6 text-yellow-300" />
+                                    <span className="text-sm font-medium">Excellent Professeur</span>
+                                </div>
                             </div>
                         </div>
                     </div>

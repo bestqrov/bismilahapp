@@ -39,3 +39,13 @@ export async function getStudentAnalytics() {
     }>>('/students/analytics');
     return response.data.data;
 }
+
+export async function getStudentLoginInfo(id: string): Promise<{id: number, name: string, email: string}> {
+    const response = await api.get<ApiResponse<{id: number, name: string, email: string}>>(`/students/${id}/login-info`);
+    return response.data.data;
+}
+
+export async function updateStudentPassword(id: string, newPassword: string): Promise<{id: number, name: string, email: string}> {
+    const response = await api.put<ApiResponse<{id: number, name: string, email: string}>>(`/students/${id}/password`, { newPassword });
+    return response.data.data;
+}

@@ -186,7 +186,114 @@ export function Sidebar({ currentPath, role }: SidebarProps) {
     }
   ];
 
-  const menuItems = (effectiveRole === 'ADMIN' || effectiveRole === 'SUPER_ADMIN') ? adminMenuItems : secretaryMenuItems;
+  /* Student Menu Items */
+  const studentMenuItems = [
+    {
+      id: 'dashboard',
+      label: 'Tableau de Bord',
+      icon: LayoutDashboard,
+      path: '/student',
+      activeColor: 'bg-[#334155]/50 border-[#60A5FA]',
+      iconColor: 'text-[#60A5FA]'
+    },
+    {
+      id: 'card',
+      label: 'Ma Carte',
+      icon: GraduationCap,
+      path: '/student/card',
+      activeColor: 'bg-[#334155]/50 border-[#10B981]',
+      iconColor: 'text-[#10B981]'
+    },
+    {
+      id: 'schedule',
+      label: 'Emploi du Temps',
+      icon: Calendar,
+      path: '/student/schedule',
+      activeColor: 'bg-[#334155]/50 border-[#818CF8]',
+      iconColor: 'text-[#818CF8]'
+    },
+    {
+      id: 'assignments',
+      label: 'Devoirs',
+      icon: FileText,
+      path: '/student/assignments',
+      activeColor: 'bg-[#334155]/50 border-[#C084FC]',
+      iconColor: 'text-[#C084FC]'
+    },
+    {
+      id: 'alerts',
+      label: 'Alertes',
+      icon: FileText,
+      path: '/student/alerts',
+      activeColor: 'bg-[#334155]/50 border-[#F472B6]',
+      iconColor: 'text-[#F472B6]'
+    },
+    {
+      id: 'payments',
+      label: 'Paiements',
+      icon: DollarSign,
+      path: '/student/payments',
+      activeColor: 'bg-[#334155]/50 border-[#34D399]',
+      iconColor: 'text-[#34D399]'
+    }
+  ];
+
+  /* Parent Menu Items */
+  const parentMenuItems = [
+    {
+      id: 'dashboard',
+      label: 'Tableau de Bord',
+      icon: LayoutDashboard,
+      path: '/parent',
+      activeColor: 'bg-[#334155]/50 border-[#60A5FA]',
+      iconColor: 'text-[#60A5FA]'
+    },
+    {
+      id: 'children',
+      label: 'Enfants',
+      icon: Users,
+      path: '/parent/children',
+      activeColor: 'bg-[#334155]/50 border-[#818CF8]',
+      iconColor: 'text-[#818CF8]'
+    },
+    {
+      id: 'schedules',
+      label: 'Emplois du Temps',
+      icon: Calendar,
+      path: '/parent/schedules',
+      activeColor: 'bg-[#334155]/50 border-[#C084FC]',
+      iconColor: 'text-[#C084FC]'
+    },
+    {
+      id: 'grades',
+      label: 'Notes',
+      icon: GraduationCap,
+      path: '/parent/grades',
+      activeColor: 'bg-[#334155]/50 border-[#F472B6]',
+      iconColor: 'text-[#F472B6]'
+    },
+    {
+      id: 'alerts',
+      label: 'Alertes',
+      icon: FileText,
+      path: '/parent/alerts',
+      activeColor: 'bg-[#334155]/50 border-[#FB923C]',
+      iconColor: 'text-[#FB923C]'
+    },
+    {
+      id: 'payments',
+      label: 'Paiements',
+      icon: DollarSign,
+      path: '/parent/payments',
+      activeColor: 'bg-[#334155]/50 border-[#34D399]',
+      iconColor: 'text-[#34D399]'
+    }
+  ];
+
+  const menuItems = (effectiveRole === 'ADMIN' || effectiveRole === 'SUPER_ADMIN') ? adminMenuItems :
+                    (effectiveRole === 'SECRETARY') ? secretaryMenuItems :
+                    (effectiveRole === 'STUDENT') ? studentMenuItems :
+                    (effectiveRole === 'PARENT') ? parentMenuItems : adminMenuItems;
 
   const handleNavigation = (path: string) => {
     router.push(path);
@@ -223,13 +330,11 @@ export function Sidebar({ currentPath, role }: SidebarProps) {
       <aside className={`
         fixed lg:static inset-y-0 left-0 z-40
         w-72 text-slate-300
-        flex flex-col border-r border-[#334155]/50 shadow-2xl
+        flex flex-col shadow-2xl
         transition-transform duration-300 ease-spring
+        bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}
-        style={{
-          background: 'radial-gradient(circle at 0% 0%, #2e3b4e 0%, #1e293b 100%)'
-        }}
       >
         <div className="p-6">
           <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 shadow-inner backdrop-blur-sm">
@@ -247,7 +352,11 @@ export function Sidebar({ currentPath, role }: SidebarProps) {
                 {profile.schoolName}
               </h1>
               <p className="text-xs text-slate-400 font-medium truncate mt-0.5">
-                {effectiveRole === 'SUPER_ADMIN' ? 'Maintenance (Super Admin)' : (effectiveRole === 'SECRETARY' ? 'Secrétaire' : (profile.director || 'Administrateur'))}
+                {effectiveRole === 'SUPER_ADMIN' ? 'Maintenance (Super Admin)' :
+                 effectiveRole === 'SECRETARY' ? 'Secrétaire' :
+                 effectiveRole === 'STUDENT' ? 'Étudiant' :
+                 effectiveRole === 'PARENT' ? 'Parent' :
+                 (profile.director || 'Administrateur')}
               </p>
             </div>
           </div>
@@ -264,7 +373,7 @@ export function Sidebar({ currentPath, role }: SidebarProps) {
 
             return (
               <li key={item.id} className="list-none mb-1">
-                {item.submenu ? (
+                {'submenu' in item && item.submenu ? (
                   <div className="space-y-1">
                     <button
                       onClick={() => toggleMenu(item.id)}

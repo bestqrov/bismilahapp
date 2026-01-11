@@ -3,7 +3,7 @@ import prisma from '../../config/database';
 import { createTransaction } from '../transactions/transactions.service';
 
 interface CreateSalaryData {
-    personnelId: string;
+    personnelId: number;
     personnelType: 'TEACHER' | 'SECRETARY';
     amount: number;
     month: string;

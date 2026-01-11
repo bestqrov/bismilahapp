@@ -6,6 +6,14 @@ import {
     updateStudent,
     deleteStudent,
     getStudentAnalytics,
+    getStudentDashboard,
+    getStudentSchedule,
+    getStudentAssignments,
+    getStudentNotifications,
+    getStudentPayments,
+    getStudentLoginInfo,
+    updateStudentPassword,
+    getStudentProfile,
 } from './students.service';
 import { sendSuccess, sendError } from '../../utils/response';
 
@@ -62,7 +70,7 @@ export const getAll = async (req: Request, res: Response): Promise<void> => {
 export const getById = async (req: Request, res: Response): Promise<void> => {
     try {
         const { id } = req.params;
-        const student = await getStudentById(id);
+        const student = await getStudentById(parseInt(id));
         sendSuccess(res, student, 'Student retrieved successfully', 200);
     } catch (error: any) {
         sendError(res, error.message, 'Failed to retrieve student', 404);
@@ -121,5 +129,98 @@ export const getAnalytics = async (req: Request, res: Response): Promise<void> =
         sendSuccess(res, analytics, 'Analytics retrieved successfully', 200);
     } catch (error: any) {
         sendError(res, error.message, 'Failed to retrieve analytics', 500);
+    }
+};
+
+export const getDashboard = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id } = req.params;
+        const dashboard = await getStudentDashboard(id);
+        sendSuccess(res, dashboard, 'Dashboard retrieved successfully', 200);
+    } catch (error: any) {
+        sendError(res, error.message, 'Failed to retrieve dashboard', 500);
+    }
+};
+
+export const getSchedule = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id } = req.params;
+        const schedule = await getStudentSchedule(id);
+        sendSuccess(res, schedule, 'Schedule retrieved successfully', 200);
+    } catch (error: any) {
+        sendError(res, error.message, 'Failed to retrieve schedule', 500);
+    }
+};
+
+export const getAssignments = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id } = req.params;
+        const assignments = await getStudentAssignments(id);
+        sendSuccess(res, assignments, 'Assignments retrieved successfully', 200);
+    } catch (error: any) {
+        sendError(res, error.message, 'Failed to retrieve assignments', 500);
+    }
+};
+
+export const getNotifications = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id } = req.params;
+        const notifications = await getStudentNotifications(id);
+        sendSuccess(res, notifications, 'Notifications retrieved successfully', 200);
+    } catch (error: any) {
+        sendError(res, error.message, 'Failed to retrieve notifications', 500);
+    }
+};
+
+export const getPayments = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id } = req.params;
+        const payments = await getStudentPayments(id);
+        sendSuccess(res, payments, 'Payments retrieved successfully', 200);
+    } catch (error: any) {
+        sendError(res, error.message, 'Failed to retrieve payments', 500);
+    }
+};
+
+export const getLoginInfo = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id } = req.params;
+        const loginInfo = await getStudentLoginInfo(id);
+        sendSuccess(res, loginInfo, 'Login info retrieved successfully', 200);
+    } catch (error: any) {
+        sendError(res, error.message, 'Failed to retrieve login info', 500);
+    }
+};
+
+export const getProfile = async (req: Request, res: Response): Promise<void> => {
+    try {
+        // Get student ID from authenticated user
+        const studentId = req.user?.id;
+        if (!studentId) {
+            sendError(res, 'User not authenticated', 'Authentication error', 401);
+            return;
+        }
+
+        const student = await getStudentProfile(studentId.toString());
+        sendSuccess(res, student, 'Profile retrieved successfully', 200);
+    } catch (error: any) {
+        sendError(res, error.message, 'Failed to retrieve profile', 500);
+    }
+};
+
+export const updatePassword = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { id } = req.params;
+        const { newPassword } = req.body;
+
+        if (!newPassword) {
+            sendError(res, 'New password is required', 'Validation error', 400);
+            return;
+        }
+
+        const updatedInfo = await updateStudentPassword(id, newPassword);
+        sendSuccess(res, updatedInfo, 'Password updated successfully', 200);
+    } catch (error: any) {
+        sendError(res, error.message, 'Failed to update password', 500);
     }
 };

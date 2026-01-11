@@ -1,7 +1,7 @@
 import prisma from '../../config/database';
 
 interface CreatePaymentData {
-    studentId: string;
+    studentId: number;
     amount: number;
     method: string;
     note?: string;
@@ -63,7 +63,7 @@ export const getAllPayments = async () => {
 
 export const getPaymentById = async (id: string) => {
     const payment = await prisma.payment.findUnique({
-        where: { id },
+        where: { id: parseInt(id) },
         include: {
             student: true,
         },

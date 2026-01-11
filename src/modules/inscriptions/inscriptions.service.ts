@@ -3,7 +3,7 @@ import { InscriptionType } from '@prisma/client';
 import { createPayment } from '../payments/payments.service';
 
 interface CreateInscriptionData {
-    studentId: string;
+    studentId: number;
     type: InscriptionType;
     category: string;
     amount: number;
@@ -111,7 +111,7 @@ export const getAllInscriptions = async () => {
 
 export const getInscriptionById = async (id: string) => {
     const inscription = await prisma.inscription.findUnique({
-        where: { id },
+        where: { id: parseInt(id) },
         include: {
             student: true,
         },
@@ -130,7 +130,7 @@ export const updateInscription = async (
 ) => {
     // Check if inscription exists
     const existingInscription = await prisma.inscription.findUnique({
-        where: { id },
+        where: { id: parseInt(id) },
     });
 
     if (!existingInscription) {
@@ -143,7 +143,7 @@ export const updateInscription = async (
     validateCategory(newType, newCategory);
 
     const inscription = await prisma.inscription.update({
-        where: { id },
+        where: { id: parseInt(id) },
         data,
         include: {
             student: true,
@@ -156,7 +156,7 @@ export const updateInscription = async (
 export const deleteInscription = async (id: string) => {
     // Check if inscription exists
     const existingInscription = await prisma.inscription.findUnique({
-        where: { id },
+        where: { id: parseInt(id) },
     });
 
     if (!existingInscription) {
@@ -164,7 +164,7 @@ export const deleteInscription = async (id: string) => {
     }
 
     await prisma.inscription.delete({
-        where: { id },
+        where: { id: parseInt(id) },
     });
 
     return { message: 'Inscription deleted successfully' };

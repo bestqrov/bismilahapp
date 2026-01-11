@@ -18,11 +18,13 @@ export const loginUser = async (data: LoginData) => {
     let role = '';
     let id = 0;
     let name = '';
+    let type = '';
 
     if (user) {
         role = user.role;
         id = user.id;
         name = user.name;
+        type = 'user';
     } else {
         // Check teacher
         const teacher = await prisma.teacher.findUnique({
@@ -37,12 +39,45 @@ export const loginUser = async (data: LoginData) => {
             role = 'TEACHER';
             id = teacher.id;
             name = teacher.name;
+            type = 'teacher';
         } else {
-            throw new Error('Invalid email or password');
+            // Check student
+            const student = await prisma.student.findUnique({
+                where: { email: email.toLowerCase() },
+            });
+            if (student && student.password) {
+                // Verify password
+                const isPasswordValid = await comparePassword(password, student.password);
+                if (!isPasswordValid) {
+                    throw new Error('Invalid email or password');
+                }
+                role = 'STUDENT';
+                id = student.id;
+                name = `${student.name} ${student.surname}`;
+                type = 'student';
+            } else {
+                // Check parent
+                const parent = await prisma.parent.findUnique({
+                    where: { email: email.toLowerCase() },
+                });
+                if (parent && parent.password) {
+                    // Verify password
+                    const isPasswordValid = await comparePassword(password, parent.password);
+                    if (!isPasswordValid) {
+                        throw new Error('Invalid email or password');
+                    }
+                    role = 'PARENT';
+                    id = parent.id;
+                    name = `${parent.name} ${parent.surname || ''}`.trim();
+                    type = 'parent';
+                } else {
+                    throw new Error('Invalid email or password');
+                }
+            }
         }
     }
 
-    if (!user && role !== 'TEACHER') {
+    if (!user && role !== 'TEACHER' && role !== 'STUDENT' && role !== 'PARENT') {
         throw new Error('Invalid email or password');
     }
 
@@ -60,7 +95,7 @@ export const loginUser = async (data: LoginData) => {
         email,
         role,
         name,
-        type: role === 'TEACHER' ? 'teacher' : 'user',
+        type,
     });
 
     return {
@@ -70,7 +105,7 @@ export const loginUser = async (data: LoginData) => {
             email,
             name,
             role,
-            type: role === 'TEACHER' ? 'teacher' : 'user',
+            type,
         },
     };
 };

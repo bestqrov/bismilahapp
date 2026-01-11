@@ -4,7 +4,7 @@ import { sendError } from '../utils/response';
 
 export interface AuthRequest extends Request {
     user?: {
-        id: string;
+        id: number;
         email: string;
         role: string;
         name: string;

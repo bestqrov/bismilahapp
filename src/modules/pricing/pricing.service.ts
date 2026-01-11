@@ -60,14 +60,14 @@ export const createPricing = async (data: PricingData) => {
 
 export const updatePricing = async (id: string, data: Partial<PricingData>) => {
     return await prisma.pricing.update({
-        where: { id },
+        where: { id: parseInt(id) },
         data
     });
 };
 
 export const deletePricing = async (id: string) => {
     return await prisma.pricing.update({
-        where: { id },
+        where: { id: parseInt(id) },
         data: { active: false }
     });
 };

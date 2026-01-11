@@ -64,37 +64,93 @@ export const registerAdmin = async (req: Request, res: Response): Promise<void> 
 
 export const getMe = async (req: Request, res: Response): Promise<void> => {
     try {
-        const userId = (req as any).user?.id;
+        const user = (req as any).user;
 
-        if (!userId) {
+        if (!user) {
             sendError(res, 'User not authenticated', 'Authentication required', 401);
             return;
         }
 
         const prisma = (await import('../config/database')).default;
-        const user = await prisma.user.findUnique({
-            where: { id: userId },
-            select: {
-                id: true,
-                email: true,
-                name: true,
-                role: true,
-                avatar: true,
-                gsm: true,
-                whatsapp: true,
-                address: true,
-                schoolLevel: true,
-                certification: true,
-                createdAt: true,
-            },
-        });
+        let profile: any = null;
 
-        if (!user) {
+        if (user.type === 'user') {
+            profile = await prisma.user.findUnique({
+                where: { id: user.id },
+                select: {
+                    id: true,
+                    email: true,
+                    name: true,
+                    role: true,
+                    avatar: true,
+                    gsm: true,
+                    whatsapp: true,
+                    address: true,
+                    schoolLevel: true,
+                    certification: true,
+                    createdAt: true,
+                },
+            });
+        } else if (user.type === 'teacher') {
+            profile = await prisma.teacher.findUnique({
+                where: { id: user.id },
+                select: {
+                    id: true,
+                    email: true,
+                    name: true,
+                    phone: true,
+                    specialties: true,
+                    levels: true,
+                    status: true,
+                    createdAt: true,
+                },
+            });
+            if (profile) {
+                profile.role = 'TEACHER';
+            }
+        } else if (user.type === 'student') {
+            profile = await prisma.student.findUnique({
+                where: { id: user.id },
+                select: {
+                    id: true,
+                    name: true,
+                    surname: true,
+                    email: true,
+                    phone: true,
+                    schoolLevel: true,
+                    active: true,
+                    createdAt: true,
+                },
+            });
+            if (profile) {
+                profile.role = 'STUDENT';
+                profile.name = `${profile.name} ${profile.surname || ''}`.trim();
+            }
+        } else if (user.type === 'parent') {
+            profile = await prisma.parent.findUnique({
+                where: { id: user.id },
+                select: {
+                    id: true,
+                    name: true,
+                    surname: true,
+                    email: true,
+                    phone: true,
+                    address: true,
+                    createdAt: true,
+                },
+            });
+            if (profile) {
+                profile.role = 'PARENT';
+                profile.name = `${profile.name} ${profile.surname || ''}`.trim();
+            }
+        }
+
+        if (!profile) {
             sendError(res, 'User not found', 'Not found', 404);
             return;
         }
 
-        sendSuccess(res, user, 'User profile retrieved', 200);
+        sendSuccess(res, profile, 'User profile retrieved', 200);
     } catch (error: any) {
         sendError(res, error.message, 'Failed to fetch user profile', 500);
     }

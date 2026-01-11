@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { Sun, Moon, Cloud, Bell, Search, Menu, Timer, Sparkles } from 'lucide-react';
+import { Sun, Moon, Cloud, Bell, Search, Menu, Timer, Sparkles, User } from 'lucide-react';
 import axios from 'axios';
 import { useSchoolProfile } from '@/hooks/useSchoolProfile';
 import useAuthStore from '@/store/useAuthStore';
@@ -92,62 +92,66 @@ export default function TopBar() {
     };
 
     return (
-        <header className="h-16 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-700 fixed top-0 right-0 left-64 z-20 px-6 flex items-center justify-between transition-all duration-300">
-            {/* Left: Search or Breadcrumbs */}
-            <div className="flex items-center gap-4">
-                <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                    <input
-                        type="text"
-                        placeholder="Rechercher..."
-                        className="pl-10 pr-4 py-2 bg-gray-100 dark:bg-gray-800 border-none rounded-full text-sm focus:ring-2 focus:ring-blue-500 w-64 transition-all dark:text-white dark:placeholder-gray-400"
-                    />
-                </div>
-            </div>
-
-            {/* Right: Actions & Profile */}
-            <div className="flex items-center gap-6">
-                {/* Athan Widget */}
-                {nextPrayer && (
-                    <div className="hidden md:flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 text-emerald-700 dark:text-emerald-300 rounded-2xl text-sm font-bold shadow-sm border border-emerald-100/50 dark:border-emerald-800/50 group hover:scale-105 transition-all cursor-pointer">
-                        <div className="p-1.5 bg-white/80 dark:bg-white/10 rounded-xl shadow-sm text-emerald-600">
-                            <Timer size={18} className="group-hover:rotate-12 transition-transform" />
-                        </div>
-                        <div className="flex flex-col">
-                            <span className="text-[10px] uppercase tracking-widest text-emerald-500/80 leading-none mb-1">Prochain Athan</span>
-                            <div className="flex items-center gap-2">
-                                <span className="font-extrabold text-emerald-900 dark:text-emerald-100">{nextPrayer.name}</span>
-                                <span className="w-1 h-1 bg-emerald-300 rounded-full"></span>
-                                <span className="text-emerald-600 dark:text-emerald-400 font-black">{nextPrayer.time}</span>
+        <header className="bg-white/80 backdrop-blur-lg border-b border-slate-200/50 shadow-sm">
+            <div className="px-6 py-4">
+                <div className="flex items-center justify-between">
+                    {/* Left Section - Welcome Message */}
+                    <div className="flex items-center space-x-4">
+                        <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
+                                <User className="w-5 h-5 text-white" />
+                            </div>
+                            <div>
+                                <h1 className="text-lg font-semibold text-slate-800">
+                                    Bonjour, {adminName} 👋
+                                </h1>
+                                <p className="text-sm text-slate-600">
+                                    {adminRole}
+                                </p>
                             </div>
                         </div>
-                        <Sparkles size={14} className="text-amber-400 animate-pulse ml-1" />
                     </div>
-                )}
 
-                {/* Theme Toggle */}
-                <button
-                    onClick={toggleTheme}
-                    className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
-                    title={theme === 'light' ? 'Passer en mode sombre' : 'Passer en mode clair'}
-                >
-                    {theme === 'light' ? <Moon size={20} /> : <Sun size={20} />}
-                </button>
+                    {/* Center Section - Search */}
+                    <div className="hidden md:flex items-center space-x-2">
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                            <input
+                                type="text"
+                                placeholder="Rechercher..."
+                                className="pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 w-64 transition-all"
+                            />
+                        </div>
+                    </div>
 
-                {/* Notifications */}
-                <button className="p-2 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors relative">
-                    <Bell size={20} />
-                    <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-gray-900"></span>
-                </button>
+                    {/* Right Section - Actions */}
+                    <div className="flex items-center space-x-3">
+                        {/* Search Mobile */}
+                        <button className="md:hidden p-2 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors">
+                            <Search className="w-5 h-5" />
+                        </button>
 
-                {/* Vertical Divider */}
-                <div className="h-8 w-px bg-gray-200 dark:bg-gray-700"></div>
+                        {/* Theme Toggle */}
+                        <button
+                            onClick={toggleTheme}
+                            className="p-2 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors"
+                        >
+                            {theme === 'light' ? (
+                                <Moon className="w-5 h-5" />
+                            ) : (
+                                <Sun className="w-5 h-5" />
+                            )}
+                        </button>
 
-                {/* Admin Profile */}
-                <div className="flex items-center gap-3">
-                    <div className="text-right hidden sm:block">
-                        <p className="text-sm font-bold text-gray-800 dark:text-gray-200 leading-none">{adminName}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{adminRole}</p>
+                        {/* Notifications */}
+                        <button className="relative p-2 text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-colors">
+                            <Bell className="w-5 h-5" />
+                            <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full flex items-center justify-center">
+                                <span className="w-1.5 h-1.5 bg-red-500 rounded-full animate-ping"></span>
+                            </span>
+                        </button>
+                    </div>
+                </div>
                     </div>
                     <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-purple-600 p-0.5 cursor-pointer">
                         <div className="w-full h-full rounded-full bg-white dark:bg-gray-800 p-0.5 flex items-center justify-center overflow-hidden">

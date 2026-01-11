@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Button from '../../../components/Button';
-import { CheckCircle, XCircle, Clock, Users, Calendar, MapPin, ArrowLeft, Save } from 'lucide-react';
+import QRScanner from '../../../components/QRScanner';
+import { CheckCircle, XCircle, Clock, Users, Calendar, MapPin, ArrowLeft, Save, QrCode } from 'lucide-react';
 
 // Simple Card components to avoid import issues
 const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
@@ -59,6 +60,8 @@ export default function TeacherAttendance() {
     const [attendance, setAttendance] = useState<Record<number, string>>({});
     const [loading, setLoading] = useState(true);
     const [submitting, setSubmitting] = useState(false);
+    const [scanMode, setScanMode] = useState(false);
+    const [scanMessage, setScanMessage] = useState<string>('');
 
     useEffect(() => {
         fetchSessions();
@@ -83,6 +86,53 @@ export default function TeacherAttendance() {
             ...prev,
             [studentId]: status,
         }));
+    };
+
+    const handleQRScan = async (qrData: string) => {
+        if (!selectedSession) return;
+
+        try {
+            const response = await fetch('/api/attendance/qr', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    qrData,
+                    sessionId: selectedSession.id,
+                }),
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                // Update local attendance state
+                const match = qrData.match(/^STUDENT:(\d+)$/);
+                if (match) {
+                    const studentId = parseInt(match[1]);
+                    setAttendance(prev => ({
+                        ...prev,
+                        [studentId]: 'present',
+                    }));
+                }
+
+                setScanMessage(`✅ ${result.data.student.name} ${result.data.student.surname} marqué présent`);
+                setTimeout(() => setScanMessage(''), 2000);
+            } else {
+                setScanMessage(result.message || 'Erreur lors du marquage de présence');
+                setTimeout(() => setScanMessage(''), 3000);
+            }
+        } catch (error) {
+            console.error('QR attendance error:', error);
+            setScanMessage('Erreur de connexion lors du scan');
+            setTimeout(() => setScanMessage(''), 3000);
+        }
+    };
+
+    const handleQRError = (error: any) => {
+        console.error('QR Scan error:', error);
+        setScanMessage('Erreur lors du scan du QR code');
+        setTimeout(() => setScanMessage(''), 3000);
     };
 
     const submitAttendance = async () => {
@@ -311,14 +361,54 @@ export default function TeacherAttendance() {
                     <CardContent>
                         <div className="space-y-4">
                             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                <div className="flex items-center gap-2 text-blue-800">
-                                    <Users className="h-5 w-5" />
-                                    <span className="font-medium">Liste des élèves ({selectedSession.group.students.length})</span>
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2 text-blue-800">
+                                        <Users className="h-5 w-5" />
+                                        <span className="font-medium">Liste des élèves ({selectedSession.group.students.length})</span>
+                                    </div>
+                                    <Button
+                                        onClick={() => setScanMode(!scanMode)}
+                                        variant={scanMode ? "primary" : "outline"}
+                                        size="sm"
+                                        className="flex items-center gap-2"
+                                    >
+                                        <QrCode className="h-4 w-4" />
+                                        {scanMode ? 'Masquer Scanner' : 'Scanner QR'}
+                                    </Button>
                                 </div>
                                 <p className="text-sm text-blue-600 mt-1">
-                                    Cliquez sur "Présent" ou "Absent" pour chaque élève
+                                    Cliquez sur "Présent" ou "Absent" pour chaque élève, ou utilisez le scanner QR
                                 </p>
                             </div>
+
+                            {/* QR Scanner */}
+                            {scanMode && (
+                                <Card className="border-2 border-dashed border-blue-300">
+                                    <CardContent className="p-4">
+                                        <div className="text-center">
+                                            <QrCode className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+                                            <h3 className="text-lg font-medium text-gray-900 mb-2">Scanner Carte Étudiant</h3>
+                                            <p className="text-sm text-gray-600 mb-4">
+                                                Demandez aux élèves de montrer leur carte ou leur QR code de profil
+                                            </p>
+                                            <QRScanner
+                                                onScan={handleQRScan}
+                                                onError={handleQRError}
+                                                className="mb-4"
+                                            />
+                                            {scanMessage && (
+                                                <div className={`p-3 rounded-lg text-sm font-medium ${
+                                                    scanMessage.startsWith('✅')
+                                                        ? 'bg-green-100 text-green-800'
+                                                        : 'bg-red-100 text-red-800'
+                                                }`}>
+                                                    {scanMessage}
+                                                </div>
+                                            )}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            )}
 
                             <div className="space-y-3 max-h-96 overflow-y-auto">
                                 {selectedSession.group.students.map((student) => (

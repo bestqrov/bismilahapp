@@ -32,7 +32,6 @@ export default function DocumentsPage() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
-    const [activeFilter, setActiveFilter] = useState<'SOUTIEN' | 'FORMATION'>('SOUTIEN');
 
     useEffect(() => {
         fetchSoutienStudents();
@@ -53,7 +52,10 @@ export default function DocumentsPage() {
     const filteredStudents = students.filter(student => {
         const matchesSearch = `${student.name} ${student.surname}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
             student.cin?.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesType = student.inscriptions?.some(ins => ins.type === activeFilter);
+        // Filter students who have both SOUTIEN and FORMATION inscriptions
+        const hasSoutien = student.inscriptions?.some(ins => ins.type === 'SOUTIEN');
+        const hasFormation = student.inscriptions?.some(ins => ins.type === 'FORMATION');
+        const matchesType = hasSoutien && hasFormation;
         return matchesSearch && matchesType;
     });
 
@@ -143,29 +145,13 @@ export default function DocumentsPage() {
 
             {!selectedStudent ? (
                 <>
-                    {/* Filter Tabs */}
-                    <div className="flex gap-4 bg-white p-2 rounded-2xl shadow-sm border border-gray-200">
-                        <button
-                            onClick={() => setActiveFilter('SOUTIEN')}
-                            className={`flex-1 py-3 px-6 rounded-xl font-bold transition-all ${activeFilter === 'SOUTIEN' ? 'bg-blue-600 text-white shadow-lg shadow-blue-200' : 'text-gray-500 hover:bg-gray-50'}`}
-                        >
-                            Soutien Scolaire
-                        </button>
-                        <button
-                            onClick={() => setActiveFilter('FORMATION')}
-                            className={`flex-1 py-3 px-6 rounded-xl font-bold transition-all ${activeFilter === 'FORMATION' ? 'bg-purple-600 text-white shadow-lg shadow-purple-200' : 'text-gray-500 hover:bg-gray-50'}`}
-                        >
-                            Formation Pro
-                        </button>
-                    </div>
-
                     {/* Search */}
                     <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
                         <div className="relative">
                             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
                             <Input
                                 type="text"
-                                placeholder={`Rechercher un élève de ${activeFilter === 'SOUTIEN' ? 'Soutien' : 'Formation'}...`}
+                                placeholder="Rechercher un élève..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 className="pl-12"
@@ -176,7 +162,7 @@ export default function DocumentsPage() {
                     {/* Students List */}
                     <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
                         <h2 className="text-xl font-bold text-gray-800 mb-4">
-                            Élèves de {activeFilter === 'SOUTIEN' ? 'Soutien Scolaire' : 'Formation Professionnelle'}
+                            Élèves inscrits en Soutien Scolaire et Formation Professionnelle
                         </h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {filteredStudents.map((student) => (
@@ -214,7 +200,7 @@ export default function DocumentsPage() {
                         <div className="p-8 print:p-0">
                             <div className="max-w-4xl mx-auto">
                                 {/* Branded Header */}
-                                <div className={`p-8 rounded-t-2xl mb-8 flex items-center justify-between border-b-4 ${activeFilter === 'SOUTIEN' ? 'bg-blue-600 border-blue-800' : 'bg-purple-600 border-purple-800'} text-white print:bg-white print:text-black print:border-black print:p-6 print:rounded-none`}>
+                                <div className={`p-8 rounded-t-2xl mb-8 flex items-center justify-between border-b-4 bg-gradient-to-r from-blue-600 to-purple-600 border-gray-800 text-white print:bg-white print:text-black print:border-black print:p-6 print:rounded-none`}>
                                     <div className="flex items-center gap-6">
                                         {profile?.logo ? (
                                             <div className="w-20 h-20 bg-white rounded-2xl p-2 shadow-lg print:shadow-none print:border print:border-gray-200">
@@ -264,7 +250,7 @@ export default function DocumentsPage() {
                                         <h1 className="text-2xl font-bold mt-4">ROYAUME DU MAROC</h1>
                                         <p className="text-lg font-semibold mt-2">MINISTERE D'EDUCATION NATIONALE</p>
                                         <h2 className="text-xl font-bold mt-8 mb-6 uppercase border-b-2 border-dashed border-gray-400 inline-block pb-1">
-                                            {activeFilter === 'SOUTIEN' ? 'FICHE DE RENSEIGNEMENTS INDIVIDUEL' : 'ATTESTATION D\'INSCRIPTION'}
+                                            FICHE DE RENSEIGNEMENTS COMPLET
                                         </h2>
                                     </div>
 
@@ -285,35 +271,31 @@ export default function DocumentsPage() {
                                             </div>
                                         </div>
 
-                                        {activeFilter === 'SOUTIEN' && (
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div>
-                                                    <span className="font-semibold">Date de naissance:</span>
-                                                    <span className="ml-2 border-b border-dotted border-gray-400 inline-block min-w-[150px]">
-                                                        {selectedStudent.birthDate ? new Date(selectedStudent.birthDate).toLocaleDateString('fr-FR') : ''}
-                                                    </span>
-                                                </div>
-                                                <div>
-                                                    <span className="font-semibold">Lieu de naissance:</span>
-                                                    <span className="ml-2 border-b border-dotted border-gray-400 inline-block min-w-[150px]">
-                                                        {selectedStudent.birthPlace || ''}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {activeFilter === 'SOUTIEN' && (
+                                        <div className="grid grid-cols-2 gap-4">
                                             <div>
-                                                <span className="font-semibold">Fille ou fils de:</span>
-                                                <span className="ml-2 border-b border-dotted border-gray-400 inline-block min-w-[250px]">
-                                                    {selectedStudent.fatherName || ''}
-                                                </span>
-                                                <span className="ml-4 font-semibold">Et de:</span>
-                                                <span className="ml-2 border-b border-dotted border-gray-400 inline-block min-w-[250px]">
-                                                    {selectedStudent.motherName || ''}
+                                                <span className="font-semibold">Date de naissance:</span>
+                                                <span className="ml-2 border-b border-dotted border-gray-400 inline-block min-w-[150px]">
+                                                    {selectedStudent.birthDate ? new Date(selectedStudent.birthDate).toLocaleDateString('fr-FR') : ''}
                                                 </span>
                                             </div>
-                                        )}
+                                            <div>
+                                                <span className="font-semibold">Lieu de naissance:</span>
+                                                <span className="ml-2 border-b border-dotted border-gray-400 inline-block min-w-[150px]">
+                                                    {selectedStudent.birthPlace || ''}
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <span className="font-semibold">Fille ou fils de:</span>
+                                            <span className="ml-2 border-b border-dotted border-gray-400 inline-block min-w-[250px]">
+                                                {selectedStudent.fatherName || ''}
+                                            </span>
+                                            <span className="ml-4 font-semibold">Et de:</span>
+                                            <span className="ml-2 border-b border-dotted border-gray-400 inline-block min-w-[250px]">
+                                                {selectedStudent.motherName || ''}
+                                            </span>
+                                        </div>
 
                                         <div>
                                             <span className="font-semibold">Numéro du CIN:</span>
@@ -336,27 +318,24 @@ export default function DocumentsPage() {
                                             </span>
                                         </div>
 
-                                        {activeFilter === 'SOUTIEN' && (
-                                            <div className="grid grid-cols-2 gap-4">
-                                                <div>
-                                                    <span className="font-semibold">Niveau scolaire:</span>
-                                                    <span className="ml-2 border-b border-dotted border-gray-400 inline-block min-w-[150px]">
-                                                        {selectedStudent.schoolLevel || ''}
-                                                    </span>
-                                                </div>
-                                                <div>
-                                                    <span className="font-semibold">Nom de l'École:</span>
-                                                    <span className="ml-2 border-b border-dotted border-gray-400 inline-block min-w-[200px]">
-                                                        {selectedStudent.currentSchool || ''}
-                                                    </span>
-                                                </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <span className="font-semibold">Niveau scolaire:</span>
+                                                <span className="ml-2 border-b border-dotted border-gray-400 inline-block min-w-[150px]">
+                                                    {selectedStudent.schoolLevel || ''}
+                                                </span>
                                             </div>
-                                        )}
+                                            <div>
+                                                <span className="font-semibold">Nom de l'École:</span>
+                                                <span className="ml-2 border-b border-dotted border-gray-400 inline-block min-w-[200px]">
+                                                    {selectedStudent.currentSchool || ''}
+                                                </span>
+                                            </div>
+                                        </div>
                                     </div>
 
-                                    {activeFilter === 'SOUTIEN' ? (
-                                        <div className="mb-8">
-                                            <h3 className="font-bold mb-4">Les Cours de Soutien</h3>
+                                    <div className="mb-8">
+                                        <h3 className="font-bold mb-4">Les Cours de Soutien</h3>
                                             <table className="w-full border-collapse border border-gray-400">
                                                 <thead>
                                                     <tr>
@@ -397,26 +376,24 @@ export default function DocumentsPage() {
                                                 </tbody>
                                             </table>
                                         </div>
-                                    ) : (
-                                        <div className="mb-8">
-                                            <h3 className="font-bold mb-4">Formation Professionnelle</h3>
-                                            <div className="border border-gray-400 p-6 rounded-lg">
-                                                <div className="space-y-4">
-                                                    {selectedStudent.inscriptions
-                                                        .filter(ins => ins.type === 'FORMATION')
-                                                        .map((ins, idx) => (
-                                                            <div key={idx} className="flex justify-between items-center border-b border-dotted border-gray-300 pb-2">
-                                                                <span className="font-bold text-lg">{ins.category || 'Formation'}</span>
-                                                                <span className="text-gray-600">Montant: {ins.amount} DH</span>
-                                                            </div>
-                                                        ))}
-                                                </div>
-                                                <div className="mt-8 pt-4 border-t border-gray-400">
-                                                    <p className="text-sm font-semibold italic">Ce document atteste de l'inscription de l'étudiant à la formation professionnelle susmentionnée.</p>
-                                                </div>
+                                    <div className="mb-8">
+                                        <h3 className="font-bold mb-4">Formation Professionnelle</h3>
+                                        <div className="border border-gray-400 p-6 rounded-lg">
+                                            <div className="space-y-4">
+                                                {selectedStudent.inscriptions
+                                                    .filter(ins => ins.type === 'FORMATION')
+                                                    .map((ins, idx) => (
+                                                        <div key={idx} className="flex justify-between items-center border-b border-dotted border-gray-300 pb-2">
+                                                            <span className="font-bold text-lg">{ins.category || 'Formation'}</span>
+                                                            <span className="text-gray-600">Montant: {ins.amount} DH</span>
+                                                        </div>
+                                                    ))}
+                                            </div>
+                                            <div className="mt-8 pt-4 border-t border-gray-400">
+                                                <p className="text-sm font-semibold italic">Ce document atteste de l'inscription de l'étudiant à la formation professionnelle susmentionnée.</p>
                                             </div>
                                         </div>
-                                    )}
+                                    </div>
 
                                     {/* Inscription Info */}
                                     {selectedStudent.inscriptions.length > 0 && (
@@ -471,14 +448,13 @@ export default function DocumentsPage() {
                                     </div>
                                     <div className="mt-2">
                                         <span className="font-bold">
-                                            {activeFilter === 'SOUTIEN' ? 'Matières:' : 'Formations:'}
+                                            Matières et Formations:
                                         </span>{' '}
-                                        {activeFilter === 'SOUTIEN'
-                                            ? getStudentSubjects(selectedStudent)
-                                            : selectedStudent.inscriptions
-                                                .filter(i => i.type === 'FORMATION')
-                                                .map(i => i.category)
-                                                .join(', ')
+                                        {getStudentSubjects(selectedStudent)}
+                                        {selectedStudent.inscriptions
+                                            .filter(i => i.type === 'FORMATION')
+                                            .map(i => i.category)
+                                            .join(', ')
                                         }
                                     </div>
                                 </div>
@@ -497,32 +473,25 @@ export default function DocumentsPage() {
                                         <tbody>
                                             <tr>
                                                 <td className="border border-black p-4 text-center h-24 align-middle">
-                                                    {selectedStudent.inscriptions.filter(i => i.type === activeFilter).length > 0
-                                                        ? new Date(selectedStudent.inscriptions.filter(i => i.type === activeFilter)[0].date).toLocaleDateString('fr-FR')
+                                                    {selectedStudent.inscriptions.length > 0
+                                                        ? new Date(Math.min(...selectedStudent.inscriptions.map(i => new Date(i.date).getTime()))).toLocaleDateString('fr-FR')
                                                         : '....................'}
                                                 </td>
                                                 <td className="border border-black p-4 text-center h-24 align-middle">
-                                                    {selectedStudent.inscriptions.filter(i => i.type === activeFilter).length > 0
-                                                        ? selectedStudent.inscriptions.filter(i => i.type === activeFilter)[0].amount
-                                                        : '....................'}
+                                                    {selectedStudent.inscriptions.reduce((sum, i) => sum + i.amount, 0) || '....................'}
                                                 </td>
                                                 <td className="border border-black p-4 text-center h-24 align-middle">
                                                     {selectedStudent.payments.reduce((sum, p) => sum + p.amount, 0) || '....................'}
                                                 </td>
                                                 <td className="border border-black p-4 h-24 align-bottom">
-                                                    {activeFilter === 'FORMATION' ? (
-                                                        <div className="flex flex-col h-full justify-center text-center">
-                                                            <span className="font-semibold text-lg">
-                                                                {selectedStudent.inscriptions.find(i => i.type === 'FORMATION')?.category}
-                                                            </span>
-                                                        </div>
-                                                    ) : (
-                                                        <>
-                                                            <div className="border-b border-dotted border-black mb-2"></div>
-                                                            <div className="border-b border-dotted border-black mb-2"></div>
-                                                            <div className="border-b border-dotted border-black"></div>
-                                                        </>
-                                                    )}
+                                                    <div className="flex flex-col h-full justify-center text-center">
+                                                        <span className="font-semibold text-sm">
+                                                            Formation: {selectedStudent.inscriptions.find(i => i.type === 'FORMATION')?.category}
+                                                        </span>
+                                                        <span className="font-semibold text-sm mt-1">
+                                                            Matières: {getStudentSubjects(selectedStudent)}
+                                                        </span>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         </tbody>

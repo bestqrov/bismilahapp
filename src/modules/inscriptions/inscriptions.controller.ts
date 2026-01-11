@@ -29,7 +29,7 @@ export const create = async (req: Request, res: Response): Promise<void> => {
             return;
         }
 
-        const inscriptionData: any = { studentId, type, category, amount };
+        const inscriptionData: any = { studentId: parseInt(studentId), type, category, amount };
         if (date) inscriptionData.date = new Date(date);
         if (note) inscriptionData.note = note;
 

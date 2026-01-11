@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import {
     Plus,
     Search,
@@ -18,7 +19,8 @@ import {
     User as UserIcon,
     Shield,
     Calendar,
-    ArrowRight
+    ArrowRight,
+    Eye
 } from 'lucide-react';
 import { getStudents, deleteStudent } from '@/lib/services/students';
 import { groupsService } from '@/lib/services/groups'; // Adjust path if needed
@@ -26,6 +28,7 @@ import AddStudentForm from '@/components/forms/AddStudentForm'; // Adjust path
 import StudentGroupModal from '@/components/StudentGroupModal'; // Adjust path
 
 export default function StudentsPage() {
+    const router = useRouter();
     const [students, setStudents] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
@@ -341,6 +344,13 @@ export default function StudentsPage() {
                                             </td>
                                             <td className="px-6 py-5 text-right">
                                                 <div className="flex justify-end gap-1.5 group-hover:translate-x-[-4px] transition-transform">
+                                                    <button
+                                                        onClick={() => router.push(`/admin/students/${student.id}`)}
+                                                        className="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-all"
+                                                        title="Voir détails"
+                                                    >
+                                                        <Eye size={18} />
+                                                    </button>
                                                     <button
                                                         onClick={() => handleOpenGroupModal(student)}
                                                         className="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-all"

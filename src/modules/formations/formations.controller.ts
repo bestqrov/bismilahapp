@@ -36,7 +36,7 @@ export const updateFormation = async (req: Request, res: Response) => {
         const { id } = req.params;
         const { name, duration, price, description } = req.body;
         const formation = await prisma.formation.update({
-            where: { id },
+            where: { id: parseInt(id) },
             data: {
                 name,
                 duration,
@@ -54,7 +54,7 @@ export const deleteFormation = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         await prisma.formation.delete({
-            where: { id },
+            where: { id: parseInt(id) },
         });
         res.status(204).send();
     } catch (error) {

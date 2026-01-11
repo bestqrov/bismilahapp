@@ -15,6 +15,8 @@ enum UserRole {
   SECRETARY
   SUPER_ADMIN
   TEACHER
+  STUDENT
+  PARENT
 }
 
 enum InscriptionType {
@@ -45,7 +47,8 @@ model Student {
   name          String
   surname       String
   phone         String?
-  email         String?
+  email         String?   @unique
+  password      String?
   cin           String?
   address       String?
   birthDate     DateTime?
@@ -66,8 +69,11 @@ model Student {
   inscriptions Inscription[]
   payments     Payment[]
   attendances  Attendance[]
-  
-  groups       Group[]
+  grades       Grade[]
+  assignments  Assignment[] @relation("AssignmentStudents")
+  notifications StudentNotification[]
+  parents       StudentParent[]
+  groups        Group[]
 
   @@map("students")
 }
@@ -97,8 +103,8 @@ model Group {
   students      Student[]
   
   timeSlots     Json? // [{ day: string, startTime: string, endTime: string }]
-
   sessions      Session[]
+  assignments   Assignment[]
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -129,6 +135,8 @@ model Teacher {
   groups        Group[]
   courses       Course[]
   sessions      Session[]
+  assignments   Assignment[]
+  grades        Grade[]
   notificationsSent Notification[] @relation("NotificationSender")
   notificationsReceived Notification[] @relation("NotificationReceiver")
 
@@ -136,6 +144,33 @@ model Teacher {
   updatedAt     DateTime @updatedAt
 
   @@map("teachers")
+}
+
+model Parent {
+  id            Int      @id @default(autoincrement())
+  name          String
+  surname       String?
+  email         String   @unique
+  password      String
+  phone         String?
+  address       String?
+  children      StudentParent[]
+  notifications StudentNotification[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("parents")
+}
+
+model StudentParent {
+  id        Int     @id @default(autoincrement())
+  studentId Int
+  student   Student @relation(fields: [studentId], references: [id])
+  parentId  Int
+  parent    Parent  @relation(fields: [parentId], references: [id])
+  relation  String? // father, mother, guardian
+  @@unique([studentId, parentId])
+  @@map("student_parents")
 }
 
 model Inscription {
@@ -178,6 +213,38 @@ model Attendance {
   updatedAt DateTime @updatedAt
 
   @@map("attendances")
+}
+
+model Assignment {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  subject     String
+  dueDate     DateTime
+  teacherId   Int
+  teacher     Teacher @relation(fields: [teacherId], references: [id])
+  groupId     Int
+  group       Group   @relation(fields: [groupId], references: [id])
+  students    Student[] @relation("AssignmentStudents")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("assignments")
+}
+
+model Grade {
+  id        Int      @id @default(autoincrement())
+  studentId Int
+  student   Student @relation(fields: [studentId], references: [id])
+  subject   String
+  grade     Float
+  teacherId Int
+  teacher   Teacher @relation(fields: [teacherId], references: [id])
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("grades")
 }
 
 model Settings {
@@ -305,4 +372,20 @@ model Notification {
   receiverTeacher Teacher?     @relation("NotificationReceiver", fields: [receiverId], references: [id])
 
   @@map("notifications")
+}
+
+model StudentNotification {
+  id        Int      @id @default(autoincrement())
+  title     String
+  message   String
+  type      String // holiday, exam, announcement, payment
+  studentId Int?
+  student   Student? @relation(fields: [studentId], references: [id])
+  parentId  Int?
+  parent    Parent?  @relation(fields: [parentId], references: [id])
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("student_notifications")
 }

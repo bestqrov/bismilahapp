@@ -32,6 +32,8 @@ export default function LoginPage() {
         if (user?.role === 'ADMIN' || user?.role === 'SUPER_ADMIN') router.push('/admin');
         else if (user?.role === 'SECRETARY') router.push('/secretary');
         else if (user?.role === 'TEACHER') router.push('/teacher');
+        else if (user?.role === 'STUDENT') router.push('/student');
+        else if (user?.role === 'PARENT') router.push('/parent');
         else router.push('/');
     };
 

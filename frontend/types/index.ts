@@ -1,5 +1,5 @@
 // User types
-export type UserRole = 'ADMIN' | 'SECRETARY' | 'SUPER_ADMIN' | 'TEACHER';
+export type UserRole = 'ADMIN' | 'SECRETARY' | 'SUPER_ADMIN' | 'TEACHER' | 'STUDENT' | 'PARENT';
 
 export interface User {
     id: string;
@@ -30,6 +30,18 @@ export interface Student {
     currentSchool?: string;
     subjects?: any; // JSON
     active: boolean;
+    createdAt: string;
+    updatedAt: string;
+}
+
+// Parent types
+export interface Parent {
+    id: string;
+    name: string;
+    surname?: string;
+    email: string;
+    phone?: string;
+    address?: string;
     createdAt: string;
     updatedAt: string;
 }

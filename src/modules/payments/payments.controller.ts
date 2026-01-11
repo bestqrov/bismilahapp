@@ -22,7 +22,7 @@ export const create = async (req: Request, res: Response): Promise<void> => {
             return;
         }
 
-        const paymentData: any = { studentId, amount, method };
+        const paymentData: any = { studentId: parseInt(studentId), amount, method };
         if (note) paymentData.note = note;
         if (date) paymentData.date = new Date(date);
 

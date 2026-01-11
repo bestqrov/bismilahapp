@@ -1,10 +1,13 @@
 import prisma from '../../config/database';
+import { hashPassword, generateRandomPassword } from '../../utils/bcrypt';
+import { getSettings } from '../settings/settings.service';
 
 interface CreateStudentData {
     name: string;
     surname: string;
     phone?: string;
     email?: string;
+    password?: string;
     cin?: string;
     address?: string;
     birthDate?: Date;
@@ -44,13 +47,29 @@ interface UpdateStudentData {
 
 export const createStudent = async (data: CreateStudentData & { inscriptionFee?: number; amountPaid?: number }) => {
     return await prisma.$transaction(async (tx) => {
+        // Generate email and password if not provided
+        let email = data.email;
+        let password = data.password;
+        if (!email) {
+            // Get school settings to use school name in email
+            const settings = await getSettings();
+            const schoolName = settings.schoolName.toLowerCase().replace(/\s+/g, ''); // Remove spaces
+            email = `${data.name.toLowerCase().replace(/\s+/g, '')}.${data.surname.toLowerCase().replace(/\s+/g, '')}@${schoolName}.com`;
+        }
+        if (!password) {
+            password = generateRandomPassword();
+            console.log(`Generated password for ${data.name} ${data.surname}: ${password}`);
+        }
+        const hashedPassword = await hashPassword(password);
+
         // 1. Create Student
         const student = await tx.student.create({
             data: {
                 name: data.name,
                 surname: data.surname,
                 phone: data.phone,
-                email: data.email,
+                email,
+                password: hashedPassword,
                 cin: data.cin,
                 address: data.address,
                 birthDate: data.birthDate,
@@ -115,7 +134,7 @@ export const getAllStudents = async () => {
     return students;
 };
 
-export const getStudentById = async (id: string) => {
+export const getStudentById = async (id: number) => {
     const student = await prisma.student.findUnique({
         where: { id },
         include: {
@@ -135,7 +154,7 @@ export const getStudentById = async (id: string) => {
 export const updateStudent = async (id: string, data: UpdateStudentData) => {
     // Check if student exists
     const existingStudent = await prisma.student.findUnique({
-        where: { id },
+        where: { id: parseInt(id) },
     });
 
     if (!existingStudent) {
@@ -143,7 +162,7 @@ export const updateStudent = async (id: string, data: UpdateStudentData) => {
     }
 
     const student = await prisma.student.update({
-        where: { id },
+        where: { id: parseInt(id) },
         data,
     });
 
@@ -153,7 +172,7 @@ export const updateStudent = async (id: string, data: UpdateStudentData) => {
 export const deleteStudent = async (id: string) => {
     // Check if student exists
     const existingStudent = await prisma.student.findUnique({
-        where: { id },
+        where: { id: parseInt(id) },
     });
 
     if (!existingStudent) {
@@ -161,7 +180,7 @@ export const deleteStudent = async (id: string) => {
     }
 
     await prisma.student.delete({
-        where: { id },
+        where: { id: parseInt(id) },
     });
 
     return { message: 'Student deleted successfully' };
@@ -276,4 +295,209 @@ export const getStudentAnalytics = async () => {
             }))
         }
     };
+};
+
+export const getStudentDashboard = async (studentId: string) => {
+    const id = parseInt(studentId);
+    const student = await prisma.student.findUnique({
+        where: { id },
+        include: {
+            groups: {
+                include: {
+                    teacher: true,
+                    formation: true,
+                },
+            },
+        },
+    });
+
+    if (!student) throw new Error('Student not found');
+
+    // Get recent assignments
+    const assignments = await prisma.assignment.findMany({
+        where: {
+            group: {
+                students: {
+                    some: { id },
+                },
+            },
+        },
+        orderBy: { dueDate: 'asc' },
+        take: 5,
+        include: {
+            teacher: true,
+            group: true,
+        },
+    });
+
+    // Get recent notifications
+    const notifications = await prisma.studentNotification.findMany({
+        where: { studentId: id },
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+    });
+
+    // Get payment status
+    const payments = await prisma.payment.findMany({
+        where: { studentId: id },
+        orderBy: { date: 'desc' },
+        take: 3,
+    });
+
+    return {
+        student: {
+            id: student.id,
+            name: `${student.name} ${student.surname}`,
+            schoolLevel: student.schoolLevel,
+            groups: student.groups,
+        },
+        assignments,
+        notifications,
+        payments,
+    };
+};
+
+export const getStudentSchedule = async (studentId: string) => {
+    const id = parseInt(studentId);
+    const student = await prisma.student.findUnique({
+        where: { id },
+        include: {
+            groups: {
+                include: {
+                    sessions: {
+                        include: {
+                            room: true,
+                            teacher: true,
+                        },
+                        orderBy: { date: 'asc' },
+                    },
+                    formation: true,
+                },
+            },
+        },
+    });
+
+    if (!student) throw new Error('Student not found');
+
+    // For now, return sessions from groups
+    const schedule = (student as any).groups.flatMap((group: any) =>
+        group.sessions.map((session: any) => ({
+            id: session.id,
+            date: session.date,
+            startTime: session.startTime,
+            endTime: session.endTime,
+            subject: group.subject || group.formation?.name || 'N/A',
+            teacher: session.teacher.name,
+            group: group.name,
+            room: session.room?.name || 'N/A',
+        }))
+    );
+
+    return schedule;
+};
+
+export const getStudentAssignments = async (studentId: string) => {
+    const id = parseInt(studentId);
+    const assignments = await prisma.assignment.findMany({
+        where: {
+            group: {
+                students: {
+                    some: { id },
+                },
+            },
+        },
+        orderBy: { dueDate: 'asc' },
+        include: {
+            teacher: true,
+            group: true,
+        },
+    });
+
+    return assignments.map(assignment => ({
+        id: assignment.id,
+        title: assignment.title,
+        description: assignment.description,
+        subject: assignment.subject,
+        dueDate: assignment.dueDate,
+        teacher: assignment.teacher.name,
+        group: assignment.group.name,
+    }));
+};
+
+export const getStudentNotifications = async (studentId: string) => {
+    const id = parseInt(studentId);
+    const notifications = await prisma.studentNotification.findMany({
+        where: { studentId: id },
+        orderBy: { createdAt: 'desc' },
+    });
+
+    return notifications;
+};
+
+export const getStudentPayments = async (studentId: string) => {
+    const id = parseInt(studentId);
+    const payments = await prisma.payment.findMany({
+        where: { studentId: id },
+        orderBy: { date: 'desc' },
+    });
+
+    // Calculate total paid and pending
+    const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+    // Assuming some total amount, for now just return payments
+    return {
+        totalPaid,
+        payments,
+        status: totalPaid > 0 ? 'partial' : 'pending', // Placeholder
+    };
+};
+
+export const getStudentLoginInfo = async (studentId: string) => {
+    const id = parseInt(studentId);
+    const student = await prisma.student.findUnique({
+        where: { id },
+        select: {
+            id: true,
+            name: true,
+            surname: true,
+            email: true,
+        },
+    });
+
+    if (!student) throw new Error('Student not found');
+
+    return {
+        id: student.id,
+        name: `${student.name} ${student.surname}`,
+        email: student.email,
+    };
+};
+
+export const getStudentProfile = async (studentId: string) => {
+    const id = parseInt(studentId);
+    const student = await prisma.student.findUnique({
+        where: { id },
+        select: {
+            id: true,
+            name: true,
+            surname: true,
+            phone: true,
+            email: true,
+            cin: true,
+            address: true,
+            birthDate: true,
+            birthPlace: true,
+            fatherName: true,
+            motherName: true,
+            schoolLevel: true,
+            currentSchool: true,
+            subjects: true,
+            photo: true,
+        },
+    });
+
+    if (!student) {
+        throw new Error('Student not found');
+    }
+
+    return student;
 };

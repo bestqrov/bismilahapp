@@ -2,18 +2,19 @@ import { Request, Response } from 'express';
 import {
     createAttendance,
     getAttendanceByStudent,
+    markAttendanceByQR,
 } from './attendance.service';
 import { sendSuccess, sendError } from '../../utils/response';
 
 export const create = async (req: Request, res: Response): Promise<void> => {
     try {
-        const { studentId, date, status } = req.body;
+        const { studentId, sessionId, status } = req.body;
 
         // Validate required fields
-        if (!studentId || !date || !status) {
+        if (!studentId || !sessionId || !status) {
             sendError(
                 res,
-                'StudentId, date, and status are required',
+                'StudentId, sessionId, and status are required',
                 'Validation error',
                 400
             );
@@ -31,8 +32,8 @@ export const create = async (req: Request, res: Response): Promise<void> => {
         }
 
         const attendance = await createAttendance({
-            studentId,
-            date: new Date(date),
+            studentId: parseInt(studentId),
+            sessionId: parseInt(sessionId),
             status,
         });
 
@@ -52,5 +53,31 @@ export const getByStudent = async (
         sendSuccess(res, attendances, 'Attendance retrieved successfully', 200);
     } catch (error: any) {
         sendError(res, error.message, 'Failed to retrieve attendance', 404);
+    }
+};
+
+export const markAttendanceByQR = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const { qrData, sessionId } = req.body;
+
+        // Validate required fields
+        if (!qrData || !sessionId) {
+            sendError(
+                res,
+                'qrData and sessionId are required',
+                'Validation error',
+                400
+            );
+            return;
+        }
+
+        const attendance = await markAttendanceByQR({
+            qrData,
+            sessionId: parseInt(sessionId),
+        });
+
+        sendSuccess(res, attendance, 'Attendance marked successfully via QR', 201);
+    } catch (error: any) {
+        sendError(res, error.message, 'Failed to mark attendance via QR', 400);
     }
 };

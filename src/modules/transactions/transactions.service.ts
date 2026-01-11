@@ -103,7 +103,7 @@ export const getMonthlyTransactionStats = async () => {
 
 export const deleteTransaction = async (id: string) => {
     await prisma.transaction.delete({
-        where: { id },
+        where: { id: parseInt(id) },
     });
     return { message: 'Transaction deleted successfully' };
 };

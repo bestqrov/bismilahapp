@@ -5,11 +5,14 @@ import { Bell, Search, User, Calendar, Clock, Sun, Moon } from 'lucide-react';
 import useAuthStore from '@/store/useAuthStore';
 
 export default function TeacherTopBar() {
-  const [currentTime, setCurrentTime] = useState(new Date());
+  const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const user = useAuthStore(state => state.user);
 
   useEffect(() => {
+    // Set initial time on client mount
+    setCurrentTime(new Date());
+
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 1000);
@@ -30,7 +33,8 @@ export default function TeacherTopBar() {
     document.documentElement.classList.toggle('dark', newTheme === 'dark');
   };
 
-  const formatTime = (date: Date) => {
+  const formatTime = (date: Date | null) => {
+    if (!date) return '--:--:--';
     return date.toLocaleTimeString('fr-FR', {
       hour: '2-digit',
       minute: '2-digit',
@@ -38,7 +42,8 @@ export default function TeacherTopBar() {
     });
   };
 
-  const formatDate = (date: Date) => {
+  const formatDate = (date: Date | null) => {
+    if (!date) return 'Chargement...';
     return date.toLocaleDateString('fr-FR', {
       weekday: 'long',
       year: 'numeric',
