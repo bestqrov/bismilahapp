@@ -43,6 +43,7 @@ interface UpdateStudentData {
     subjects?: any;
     photo?: string;
     active?: boolean;
+    groupIds?: string[];
 }
 
 export const createStudent = async (data: CreateStudentData & { inscriptionFee?: number; amountPaid?: number }) => {
@@ -155,15 +156,47 @@ export const updateStudent = async (id: string, data: UpdateStudentData) => {
     // Check if student exists
     const existingStudent = await prisma.student.findUnique({
         where: { id: parseInt(id) },
+        include: { groups: true }
     });
 
     if (!existingStudent) {
         throw new Error('Student not found');
     }
 
+    // If groupIds provided, validate no duplicate subjects for SOUTIEN groups
+    if (data.groupIds) {
+        const groups = await prisma.group.findMany({
+            where: { id: { in: data.groupIds.map(id => parseInt(id)) } },
+            select: { id: true, subject: true, type: true }
+        });
+
+        const soutienGroups = groups.filter(g => g.type === 'SOUTIEN');
+        const subjects = soutienGroups.map(g => g.subject);
+        const uniqueSubjects = new Set(subjects);
+
+        if (subjects.length !== uniqueSubjects.size) {
+            throw new Error('Un étudiant ne peut pas s\'inscrire deux fois à la même matière de soutien scolaire');
+        }
+
+        // Check if student is already in any of these groups
+        const existingGroupIds = existingStudent.groups.map(g => g.id);
+        const conflictingGroups = data.groupIds.filter(id => existingGroupIds.includes(parseInt(id)));
+        if (conflictingGroups.length > 0) {
+            throw new Error('L\'étudiant est déjà inscrit à certains groupes sélectionnés');
+        }
+    }
+
+    const updateData: any = { ...data };
+    if (data.groupIds) {
+        updateData.groups = {
+            connect: data.groupIds.map(id => ({ id: parseInt(id) }))
+        };
+    }
+
     const student = await prisma.student.update({
         where: { id: parseInt(id) },
-        data,
+        data: updateData,
+        include: { groups: true }
     });
 
     return student;
@@ -176,14 +209,15 @@ export const deleteStudent = async (id: string) => {
     });
 
     if (!existingStudent) {
-        throw new Error('Student not found');
+        throw new Error('Étudiant non trouvé');
     }
 
+    // Delete the student (cascade will handle related records)
     await prisma.student.delete({
         where: { id: parseInt(id) },
     });
 
-    return { message: 'Student deleted successfully' };
+    return { message: 'Étudiant supprimé avec succès' };
 };
 
 // Helpers removed as global pricing is deprecated

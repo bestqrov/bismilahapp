@@ -88,7 +88,26 @@ export const getParentChildren = async (parentId: string) => {
                 include: {
                     student: {
                         include: {
-                            groups: true,
+                            groups: {
+                                include: {
+                                    course: true,
+                                },
+                            },
+                            payments: {
+                                orderBy: { date: 'desc' },
+                                take: 10,
+                            },
+                            attendances: {
+                                include: {
+                                    session: {
+                                        include: {
+                                            group: true,
+                                        },
+                                    },
+                                },
+                                orderBy: { createdAt: 'desc' },
+                                take: 50,
+                            },
                         },
                     },
                 },
@@ -100,9 +119,37 @@ export const getParentChildren = async (parentId: string) => {
 
     return parent.children.map(pc => ({
         id: pc.student.id,
-        name: `${pc.student.name} ${pc.student.surname}`,
-        class: pc.student.groups.map(g => g.name).join(', '),
-        level: pc.student.schoolLevel,
+        name: pc.student.name,
+        surname: pc.student.surname,
+        phone: pc.student.phone,
+        email: pc.student.email,
+        address: pc.student.address,
+        birthDate: pc.student.birthDate?.toISOString(),
+        schoolLevel: pc.student.schoolLevel,
+        currentSchool: pc.student.currentSchool,
+        active: pc.student.active,
+        groups: pc.student.groups.map(g => ({
+            id: g.id,
+            name: g.name,
+            type: g.type,
+            course: g.course ? { name: g.course.name } : undefined,
+        })),
+        payments: pc.student.payments.map(p => ({
+            id: p.id,
+            amount: p.amount,
+            date: p.date.toISOString(),
+            method: p.method,
+        })),
+        attendances: pc.student.attendances.map(a => ({
+            id: a.id,
+            status: a.status,
+            session: {
+                date: a.session.date.toISOString(),
+                group: {
+                    name: a.session.group.name,
+                },
+            },
+        })),
     }));
 };
 

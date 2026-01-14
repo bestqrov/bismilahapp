@@ -8,7 +8,7 @@ import { getStudents } from '@/lib/services/students';
 import { groupsService } from '@/lib/services/groups';
 
 interface Student {
-    id: string;
+    id: number;
     name: string;
     surname: string;
 }
@@ -111,10 +111,10 @@ export default function PresencePage() {
         if (!selectedGroup) return;
 
         const newAttendance: MonthlyAttendance['attendance'] = {};
-        const groupStudents = students.filter(s => selectedGroup.studentIds.includes(s.id));
+        const groupStudents = students.filter(s => selectedGroup.studentIds.includes(s.id.toString()));
 
         groupStudents.forEach(student => {
-            newAttendance[student.id] = {
+            newAttendance[student.id.toString()] = {
                 week1: { s1: false, s2: false },
                 week2: { s1: false, s2: false },
                 week3: { s1: false, s2: false },
@@ -180,7 +180,7 @@ export default function PresencePage() {
     };
 
     const groupStudents = selectedGroup
-        ? students.filter(s => selectedGroup.studentIds.includes(s.id))
+        ? students.filter(s => selectedGroup.studentIds.includes(s.id.toString()))
         : [];
 
     const monthName = new Date(selectedMonth + '-01').toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
@@ -302,23 +302,23 @@ export default function PresencePage() {
                                                 <td key={`${week}-s1`} className="border border-gray-300 p-0 text-center">
                                                     <button
                                                         onClick={() => toggleAttendance(student.id, week, 's1')}
-                                                        className={`w-full h-full px-2 py-3 print:py-2 transition-colors ${attendance[student.id]?.[week]?.s1
+                                                        className={`w-full h-full px-2 py-3 print:py-2 transition-colors ${attendance[student.id.toString()]?.[week]?.s1
                                                             ? 'bg-green-100 hover:bg-green-200'
                                                             : 'bg-red-50 hover:bg-red-100'
                                                             }`}
                                                     >
-                                                        {attendance[student.id]?.[week]?.s1 ? '✓' : '✗'}
+                                                        {attendance[student.id.toString()]?.[week]?.s1 ? '✓' : '✗'}
                                                     </button>
                                                 </td>
                                                 <td key={`${week}-s2`} className="border border-gray-300 p-0 text-center">
                                                     <button
                                                         onClick={() => toggleAttendance(student.id, week, 's2')}
-                                                        className={`w-full h-full px-2 py-3 print:py-2 transition-colors ${attendance[student.id]?.[week]?.s2
+                                                        className={`w-full h-full px-2 py-3 print:py-2 transition-colors ${attendance[student.id.toString()]?.[week]?.s2
                                                             ? 'bg-green-100 hover:bg-green-200'
                                                             : 'bg-red-50 hover:bg-red-100'
                                                             }`}
                                                     >
-                                                        {attendance[student.id]?.[week]?.s2 ? '✓' : '✗'}
+                                                        {attendance[student.id.toString()]?.[week]?.s2 ? '✓' : '✗'}
                                                     </button>
                                                 </td>
                                             </>
@@ -326,7 +326,7 @@ export default function PresencePage() {
                                         <td className="border border-gray-300 p-1">
                                             <input
                                                 type="text"
-                                                value={attendance[student.id]?.observation || ''}
+                                                value={attendance[student.id.toString()]?.observation || ''}
                                                 onChange={(e) => updateObservation(student.id, e.target.value)}
                                                 className="w-full px-2 py-1 border-0 focus:ring-1 focus:ring-blue-500 rounded print:text-xs"
                                                 placeholder="..."

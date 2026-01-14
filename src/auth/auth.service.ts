@@ -34,7 +34,7 @@ export const loginUser = async (data: LoginData) => {
             // Verify password
             const isPasswordValid = await comparePassword(password, teacher.password);
             if (!isPasswordValid) {
-                throw new Error('Invalid email or password');
+                throw new Error('Mot de passe incorrect');
             }
             role = 'TEACHER';
             id = teacher.id;
@@ -49,7 +49,7 @@ export const loginUser = async (data: LoginData) => {
                 // Verify password
                 const isPasswordValid = await comparePassword(password, student.password);
                 if (!isPasswordValid) {
-                    throw new Error('Invalid email or password');
+                    throw new Error('Mot de passe incorrect');
                 }
                 role = 'STUDENT';
                 id = student.id;
@@ -64,28 +64,28 @@ export const loginUser = async (data: LoginData) => {
                     // Verify password
                     const isPasswordValid = await comparePassword(password, parent.password);
                     if (!isPasswordValid) {
-                        throw new Error('Invalid email or password');
+                        throw new Error('Mot de passe incorrect');
                     }
                     role = 'PARENT';
                     id = parent.id;
                     name = `${parent.name} ${parent.surname || ''}`.trim();
                     type = 'parent';
                 } else {
-                    throw new Error('Invalid email or password');
+                    throw new Error('Mot de passe incorrect');
                 }
             }
         }
     }
 
     if (!user && role !== 'TEACHER' && role !== 'STUDENT' && role !== 'PARENT') {
-        throw new Error('Invalid email or password');
+        throw new Error('Mot de passe incorrect');
     }
 
     // For user, verify password
     if (user) {
         const isPasswordValid = await comparePassword(password, user.password);
         if (!isPasswordValid) {
-            throw new Error('Invalid email or password');
+            throw new Error('Mot de passe incorrect');
         }
     }
 

@@ -118,9 +118,13 @@ export const remove = async (req: Request, res: Response): Promise<void> => {
     try {
         const { id } = req.params;
         const result = await deleteStudent(id);
-        sendSuccess(res, result, 'Student deleted successfully', 200);
+        sendSuccess(res, result, 'Étudiant supprimé avec succès', 200);
     } catch (error: any) {
-        sendError(res, error.message, 'Failed to delete student', 404);
+        console.error('Delete student error:', error.message);
+        // Return appropriate status code based on error type
+        const statusCode = error.message.includes('Cannot delete') ? 400 :
+                          error.message.includes('not found') ? 404 : 500;
+        sendError(res, error.message, 'Erreur lors de la suppression de l\'étudiant', statusCode);
     }
 };
 

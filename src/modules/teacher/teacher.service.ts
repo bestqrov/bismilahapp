@@ -25,6 +25,18 @@ export const getTeacherGroups = async (teacherId: number) => {
     });
 };
 
+export const createCourse = async (data: {
+    name: string;
+    teacherId: number;
+}) => {
+    return await prisma.course.create({
+        data: {
+            name: data.name,
+            teacherId: data.teacherId,
+        },
+    });
+};
+
 export const getTeacherCourses = async (teacherId: number) => {
     return await prisma.course.findMany({
         where: { teacherId },
@@ -139,8 +151,52 @@ export const sendNotification = async (data: {
     });
 };
 
-export const getAvailableRooms = async () => {
-    return await prisma.room.findMany();
+export const getAvailableRooms = async (date?: string, startTime?: string, endTime?: string) => {
+    if (!date || !startTime || !endTime) {
+        // If no date/time provided, return all rooms
+        return await prisma.room.findMany();
+    }
+
+    // Get all rooms
+    const allRooms = await prisma.room.findMany();
+
+    // Find rooms that are not booked for the specified time slot
+    const availableRooms = [];
+
+    for (const room of allRooms) {
+        const conflictingSession = await prisma.session.findFirst({
+            where: {
+                roomId: room.id,
+                date: new Date(date),
+                OR: [
+                    {
+                        AND: [
+                            { startTime: { lte: startTime } },
+                            { endTime: { gt: startTime } },
+                        ],
+                    },
+                    {
+                        AND: [
+                            { startTime: { lt: endTime } },
+                            { endTime: { gte: endTime } },
+                        ],
+                    },
+                    {
+                        AND: [
+                            { startTime: { gte: startTime } },
+                            { endTime: { lte: endTime } },
+                        ],
+                    },
+                ],
+            },
+        });
+
+        if (!conflictingSession) {
+            availableRooms.push(room);
+        }
+    }
+
+    return availableRooms;
 };
 
 export const getAttendanceStats = async (teacherId: number) => {
@@ -271,4 +327,65 @@ export const getSessionAttendanceStats = async (teacherId: number) => {
             attendanceRate,
         };
     });
+};
+
+export const getRecentActivities = async (teacherId: number) => {
+    // Get recent sessions with attendance
+    const recentSessions = await prisma.session.findMany({
+        where: { teacherId },
+        include: {
+            group: {
+                include: {
+                    students: true,
+                },
+            },
+            attendances: true,
+        },
+        orderBy: { date: 'desc' },
+        take: 5,
+    });
+
+    const activities = [];
+
+    for (const session of recentSessions) {
+        const presentCount = session.attendances.filter(a => a.status === 'present').length;
+        const totalStudents = session.group.students.length;
+
+        activities.push({
+            id: `session-${session.id}`,
+            type: 'session',
+            title: 'Séance terminée',
+            description: `${session.group.name} - ${presentCount}/${totalStudents} présents`,
+            timestamp: session.date,
+            icon: 'CheckCircle',
+            color: 'green',
+        });
+    }
+
+    // Get recent notifications sent by teacher
+    const recentNotifications = await prisma.notification.findMany({
+        where: {
+            senderId: teacherId,
+            senderType: 'teacher',
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 3,
+    });
+
+    for (const notification of recentNotifications) {
+        activities.push({
+            id: `notification-${notification.id}`,
+            type: 'notification',
+            title: 'Notification envoyée',
+            description: notification.title,
+            timestamp: notification.createdAt,
+            icon: 'Bell',
+            color: 'blue',
+        });
+    }
+
+    // Sort by timestamp and take most recent 5
+    return activities
+        .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+        .slice(0, 5);
 };

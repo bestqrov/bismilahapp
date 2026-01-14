@@ -35,16 +35,16 @@ interface TeacherSidebarProps {
 }
 
 const teacherMenuItems = [
-  // Main Dashboard
+  // Dashboard
   {
-    name: 'Dashboard',
+    name: 'Tableau de Bord',
     href: '/teacher',
     icon: 'LayoutDashboard',
     description: 'Vue d\'ensemble',
     color: 'from-blue-500 to-blue-600',
     bgColor: 'bg-blue-50',
     iconColor: 'text-blue-600',
-    section: 'main'
+    section: 'dashboard'
   },
   // Teaching Management
   {
@@ -62,6 +62,16 @@ const teacherMenuItems = [
     href: '/teacher/sessions',
     icon: 'Calendar',
     description: 'Planning des cours',
+    color: 'from-blue-500 to-blue-600',
+    bgColor: 'bg-blue-50',
+    iconColor: 'text-blue-600',
+    section: 'teaching'
+  },
+  {
+    name: 'Mes Cours',
+    href: '/teacher/courses',
+    icon: 'BookOpen',
+    description: 'Gérer mes cours',
     color: 'from-blue-500 to-blue-600',
     bgColor: 'bg-blue-50',
     iconColor: 'text-blue-600',
@@ -132,44 +142,6 @@ export default function TeacherSidebar({ menuItems = teacherMenuItems }: Teacher
 
       {/* Navigation */}
       <nav className="flex-1 p-4 space-y-6">
-        {/* Main Section */}
-        <div className="space-y-2">
-          <h3 className="text-xs font-semibold text-white uppercase tracking-wider px-3 py-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg shadow-lg">
-            Principal
-          </h3>
-          {menuItems.filter(item => item.section === 'main').map((item) => {
-            const Icon = iconMap[item.icon as keyof typeof iconMap];
-            const active = isActive(item.href);
-
-            return (
-              <button
-                key={item.name}
-                onClick={() => router.push(item.href)}
-                className={`w-full p-4 rounded-xl transition-all duration-200 group ${
-                  active
-                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 shadow-lg shadow-blue-500/25'
-                    : 'hover:bg-slate-700/50'
-                }`}
-              >
-                <div className="flex items-center space-x-3">
-                  <div className={`p-2 rounded-lg ${active ? 'bg-white/20' : item.bgColor} transition-colors`}>
-                    <Icon className={`w-5 h-5 ${active ? 'text-white' : item.iconColor}`} />
-                  </div>
-                  <div className="flex-1 text-left">
-                    <p className={`font-medium ${active ? 'text-white' : 'text-slate-200'}`}>
-                      {item.name}
-                    </p>
-                    <p className="text-xs text-slate-400">{item.description}</p>
-                  </div>
-                  {active && (
-                    <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                  )}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-
         {/* Teaching Section */}
         <div className="space-y-2">
           <h3 className="text-xs font-semibold text-white uppercase tracking-wider px-3 py-2 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg shadow-lg">

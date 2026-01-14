@@ -14,17 +14,6 @@ interface StudentData {
     id: number;
     name: string;
     surname: string;
-    schoolLevel?: string;
-    photo?: string;
-    currentSchool?: string;
-    phone?: string;
-    email?: string;
-    cin?: string;
-    address?: string;
-    birthDate?: string;
-    birthPlace?: string;
-    fatherName?: string;
-    motherName?: string;
 }
 
 export default function StudentCardPage() {
@@ -123,8 +112,8 @@ export default function StudentCardPage() {
                                     <Printer className="h-6 w-6 text-white" />
                                 </div>
                                 <div>
-                                    <h1 className="text-3xl font-bold text-gray-900">Ma Carte d&apos;Étudiant</h1>
-                                    <p className="text-gray-600 text-lg">Votre carte d&apos;identité numérique</p>
+                                    <h1 className="text-3xl font-bold text-gray-900">Mon QR Code</h1>
+                                    <p className="text-gray-600 text-lg">Votre code QR d&apos;identification</p>
                                 </div>
                             </div>
                         </div>
@@ -147,7 +136,7 @@ export default function StudentCardPage() {
                                         className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white border-0 shadow-lg hover:shadow-xl transition-all duration-300 py-4"
                                     >
                                         <Printer size={20} className="mr-2" />
-                                        Imprimer la carte
+                                        Imprimer le QR
                                     </Button>
                                     <Button
                                         onClick={handleDownload}

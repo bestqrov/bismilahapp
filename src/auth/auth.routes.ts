@@ -1,10 +1,11 @@
 import { Router } from 'express';
-import { login, registerAdmin } from './auth.controller';
+import { login, registerAdmin, adminExists } from './auth.controller';
 
 const router = Router();
 
 router.post('/login', login);
 router.post('/register-admin', registerAdmin);
+router.get('/admin-exists', adminExists);
 // Note: router definition order matters if middleware is involved, but here we add it explicitly
 import { authMiddleware } from '../middlewares/auth.middleware';
 import { getMe } from './auth.controller';

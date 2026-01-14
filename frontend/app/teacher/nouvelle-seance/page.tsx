@@ -44,6 +44,8 @@ export default function NouvelleSeance() {
     const [groups, setGroups] = useState<Group[]>([]);
     const [rooms, setRooms] = useState<Room[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadingGroups, setLoadingGroups] = useState(false);
+    const [loadingRooms, setLoadingRooms] = useState(false);
     const [submitting, setSubmitting] = useState(false);
 
     const [formData, setFormData] = useState({
@@ -55,25 +57,71 @@ export default function NouvelleSeance() {
     });
 
     useEffect(() => {
-        fetchData();
+        fetchGroups();
     }, []);
 
-    const fetchData = async () => {
-        try {
-            const [groupsRes, roomsRes] = await Promise.all([
-                fetch('/api/teacher/groups'),
-                fetch('/api/teacher/rooms')
-            ]);
+    useEffect(() => {
+        if (formData.date && formData.startTime && formData.endTime) {
+            fetchAvailableRooms();
+        } else {
+            fetchAllRooms();
+        }
+    }, [formData.date, formData.startTime, formData.endTime]);
 
-            if (groupsRes.ok) {
-                const groupsData = await groupsRes.json();
+    const fetchGroups = async () => {
+        setLoadingGroups(true);
+        try {
+            const response = await fetch('/api/teacher/groups');
+            if (response.ok) {
+                const groupsData = await response.json();
                 setGroups(groupsData.data);
             }
+        } catch (error) {
+            console.error('Failed to fetch groups:', error);
+        } finally {
+            setLoadingGroups(false);
+        }
+    };
 
-            if (roomsRes.ok) {
-                const roomsData = await roomsRes.json();
+    const fetchAllRooms = async () => {
+        setLoadingRooms(true);
+        try {
+            const response = await fetch('/api/teacher/rooms');
+            if (response.ok) {
+                const roomsData = await response.json();
                 setRooms(roomsData.data);
             }
+        } catch (error) {
+            console.error('Failed to fetch rooms:', error);
+        } finally {
+            setLoadingRooms(false);
+        }
+    };
+
+    const fetchAvailableRooms = async () => {
+        setLoadingRooms(true);
+        try {
+            const params = new URLSearchParams({
+                date: formData.date,
+                startTime: formData.startTime,
+                endTime: formData.endTime,
+            });
+            const response = await fetch(`/api/teacher/rooms?${params}`);
+            if (response.ok) {
+                const roomsData = await response.json();
+                setRooms(roomsData.data);
+            }
+        } catch (error) {
+            console.error('Failed to fetch available rooms:', error);
+        } finally {
+            setLoadingRooms(false);
+        }
+    };
+
+    const fetchData = async () => {
+        setLoading(true);
+        try {
+            await Promise.all([fetchGroups(), fetchAllRooms()]);
         } catch (error) {
             console.error('Failed to fetch data:', error);
         } finally {
@@ -184,8 +232,11 @@ export default function NouvelleSeance() {
                                 onChange={(e) => handleInputChange('groupId', e.target.value)}
                                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 required
+                                disabled={loadingGroups}
                             >
-                                <option value="">Sélectionner un groupe</option>
+                                <option value="">
+                                    {loadingGroups ? 'Chargement...' : 'Sélectionner un groupe'}
+                                </option>
                                 {groups.map((group) => (
                                     <option key={group.id} value={group.id}>
                                         {group.name} ({group.students.length} élèves)
@@ -197,21 +248,29 @@ export default function NouvelleSeance() {
                         {/* Room Selection */}
                         <div>
                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                Salle *
+                                Salle {formData.date && formData.startTime && formData.endTime ? '(Disponibles)' : ''} *
                             </label>
                             <select
                                 value={formData.roomId}
                                 onChange={(e) => handleInputChange('roomId', e.target.value)}
                                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                 required
+                                disabled={loadingRooms}
                             >
-                                <option value="">Sélectionner une salle</option>
+                                <option value="">
+                                    {loadingRooms ? 'Chargement...' : 'Sélectionner une salle'}
+                                </option>
                                 {rooms.map((room) => (
                                     <option key={room.id} value={room.id}>
                                         {room.name}
                                     </option>
                                 ))}
                             </select>
+                            {formData.date && formData.startTime && formData.endTime && (
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Salles disponibles pour le {new Date(formData.date).toLocaleDateString('fr-FR')} de {formData.startTime} à {formData.endTime}
+                                </p>
+                            )}
                         </div>
 
                         {/* Date */}

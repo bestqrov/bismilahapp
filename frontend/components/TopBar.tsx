@@ -30,7 +30,15 @@ export default function TopBar() {
         if (user) {
             const name = `${user.name} ${user.surname || ''}`.trim();
             setAdminName(name);
-            setAdminRole(user.role === 'ADMIN' ? 'Administrateur' : 'Secrétaire');
+            if (user.role === 'ADMIN') {
+                setAdminRole('Administrateur');
+            } else if (user.role === 'SECRETARY') {
+                setAdminRole('Secrétaire');
+            } else if (user.role === 'PARENT') {
+                setAdminRole('Parent');
+            } else {
+                setAdminRole('Utilisateur');
+            }
         }
 
         // Fetch Athan Times

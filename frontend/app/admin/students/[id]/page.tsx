@@ -20,6 +20,7 @@ import {
     EyeOff
 } from 'lucide-react';
 import { getStudentById, updateStudent, getStudentLoginInfo, updateStudentPassword } from '@/lib/services/students';
+import { groupsService } from '@/lib/services/groups';
 
 export default function StudentDetailPage() {
     const params = useParams();
@@ -34,6 +35,8 @@ export default function StudentDetailPage() {
     const [newPassword, setNewPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const [formData, setFormData] = useState<any>({});
+    const [availableGroups, setAvailableGroups] = useState<any[]>([]);
+    const [selectedGroupIds, setSelectedGroupIds] = useState<string[]>([]);
 
     useEffect(() => {
         if (studentId) {
@@ -44,11 +47,16 @@ export default function StudentDetailPage() {
     const fetchStudentData = async () => {
         setIsLoading(true);
         try {
-            const studentData = await getStudentById(studentId);
-            const loginData = await getStudentLoginInfo(studentId);
+            const [studentData, loginData, groupsData] = await Promise.all([
+                getStudentById(studentId),
+                getStudentLoginInfo(studentId),
+                groupsService.getAll('SOUTIEN')
+            ]);
             setStudent(studentData);
             setLoginInfo(loginData);
+            setAvailableGroups(groupsData);
             setFormData(studentData);
+            setSelectedGroupIds(studentData.groups?.map((g: any) => g.id.toString()) || []);
         } catch (error) {
             console.error('Error fetching student data:', error);
         } finally {
@@ -58,11 +66,13 @@ export default function StudentDetailPage() {
 
     const handleUpdateStudent = async () => {
         try {
-            await updateStudent(studentId, formData);
-            setStudent(formData);
+            const updateData = { ...formData, groupIds: selectedGroupIds };
+            await updateStudent(studentId, updateData);
+            setStudent({ ...formData, groups: availableGroups.filter(g => selectedGroupIds.includes(g.id.toString())) });
             setIsEditing(false);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Error updating student:', error);
+            alert(error.message || 'Error updating student');
         }
     };
 
@@ -229,6 +239,47 @@ export default function StudentDetailPage() {
                                     )}
                                 </div>
                             </div>
+                        </div>
+
+                        {/* Soutien Scolaire */ }
+                        <div className="bg-white rounded-lg shadow-sm p-6">
+                            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                                <BookOpen className="h-5 w-5 mr-2" />
+                                Soutien Scolaire
+                            </h2>
+                            {isEditing ? (
+                                <div className="space-y-3">
+                                    <label className="block text-sm font-medium text-gray-700">Matières de soutien</label>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {availableGroups.map((group: any) => (
+                                            <label key={group.id} className="flex items-center space-x-2">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedGroupIds.includes(group.id.toString())}
+                                                    onChange={(e) => {
+                                                        if (e.target.checked) {
+                                                            setSelectedGroupIds([...selectedGroupIds, group.id.toString()]);
+                                                        } else {
+                                                            setSelectedGroupIds(selectedGroupIds.filter(id => id !== group.id.toString()));
+                                                        }
+                                                    }}
+                                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                />
+                                                <span className="text-sm text-gray-900">{group.subject} ({group.level})</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                    <p className="text-xs text-gray-500">L'étudiant peut s'inscrire à plusieurs matières mais pas deux fois à la même.</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-2">
+                                    {student.groups?.filter((g: any) => g.type === 'SOUTIEN').map((group: any) => (
+                                        <div key={group.id} className="text-sm text-gray-900">
+                                            {group.subject} ({group.level})
+                                        </div>
+                                    )) || <p className="text-sm text-gray-500">Aucune matière de soutien</p>}
+                                </div>
+                            )}
                         </div>
 
                         {/* Login Information */}

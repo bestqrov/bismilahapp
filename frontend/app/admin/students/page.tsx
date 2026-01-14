@@ -21,13 +21,15 @@ import {
     Calendar,
     ArrowRight,
     Eye,
-    Key
+    Key,
+    X
 } from 'lucide-react';
-import { getStudents, deleteStudent } from '@/lib/services/students';
+import { getStudents, deleteStudent, updateStudent } from '@/lib/services/students';
 import { groupsService } from '@/lib/services/groups'; // Adjust path if needed
 import AddStudentForm from '@/components/forms/AddStudentForm'; // Adjust path
 import StudentGroupModal from '@/components/StudentGroupModal'; // Adjust path
 import StudentLoginModal from '@/components/StudentLoginModal'; // New import
+import Input from '@/components/Input'; // Add Input import
 
 export default function StudentsPage() {
     const router = useRouter();
@@ -49,6 +51,14 @@ export default function StudentsPage() {
     const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
     const [selectedStudentForLogin, setSelectedStudentForLogin] = useState<any>(null);
 
+    // Quick Edit Modal State
+    const [isQuickEditOpen, setIsQuickEditOpen] = useState(false);
+    const [quickEditStudent, setQuickEditStudent] = useState<any>(null);
+    const [quickEditData, setQuickEditData] = useState<any>({});
+
+    const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
+    const [showBulkActions, setShowBulkActions] = useState(false);
+
     useEffect(() => {
         fetchStudents();
     }, []);
@@ -65,13 +75,23 @@ export default function StudentsPage() {
         }
     };
 
-    const handleDelete = async (id: string) => {
-        if (confirm('Êtes-vous sûr de vouloir supprimer cet élève ?')) {
+    const handleDelete = async (student: any) => {
+        const studentName = `${student.name} ${student.surname}`;
+        const confirmMessage = `Êtes-vous sûr de vouloir supprimer l'élève "${studentName}" ?\n\nCette action est irréversible et supprimera définitivement toutes les données de cet élève.`;
+
+        if (window.confirm(confirmMessage)) {
             try {
-                await deleteStudent(id);
+                await deleteStudent(student.id);
+                // Show success message
+                alert(`L'élève "${studentName}" a été supprimé avec succès.`);
                 fetchStudents();
-            } catch (error) {
+            } catch (error: any) {
                 console.error('Failed to delete student:', error);
+                // Show specific error message
+                const errorMessage = error?.response?.data?.message ||
+                                   error?.message ||
+                                   'Une erreur est survenue lors de la suppression.';
+                alert(`Erreur lors de la suppression: ${errorMessage}`);
             }
         }
     };
@@ -79,6 +99,92 @@ export default function StudentsPage() {
     const handleEdit = (student: any) => {
         setEditingStudent(student);
         setIsAddMode(true);
+    };
+
+    const handleSelectAll = (checked: boolean) => {
+        if (checked) {
+            setSelectedStudents(filteredStudents.map(s => s.id));
+        } else {
+            setSelectedStudents([]);
+        }
+    };
+
+    const handleSelectStudent = (studentId: string, checked: boolean) => {
+        if (checked) {
+            setSelectedStudents(prev => [...prev, studentId]);
+        } else {
+            setSelectedStudents(prev => prev.filter(id => id !== studentId));
+        }
+    };
+
+    const handleBulkDelete = async () => {
+        if (selectedStudents.length === 0) return;
+
+        const studentsToDelete = filteredStudents.filter(s => selectedStudents.includes(s.id.toString()));
+        const studentNames = studentsToDelete.map(s => `${s.name} ${s.surname}`).join(', ');
+
+        const confirmMessage = `Êtes-vous sûr de vouloir supprimer ${selectedStudents.length} élève(s) ?\n\nÉlèves concernés:\n${studentNames}\n\nCette action est irréversible.`;
+
+        if (window.confirm(confirmMessage)) {
+            try {
+                await Promise.all(selectedStudents.map(id => deleteStudent(id)));
+                alert(`${selectedStudents.length} élève(s) supprimé(s) avec succès.`);
+                setSelectedStudents([]);
+                fetchStudents();
+            } catch (error: any) {
+                console.error('Failed to delete students:', error);
+                const errorMessage = error?.response?.data?.message ||
+                                   error?.message ||
+                                   'Une erreur est survenue lors de la suppression.';
+                alert(`Erreur lors de la suppression: ${errorMessage}`);
+            }
+        }
+    };
+
+    const handleBulkExport = () => {
+        // Export selected students to CSV
+        const studentsToExport = filteredStudents.filter(s => selectedStudents.includes(s.id.toString()));
+        const csvContent = [
+            ['Nom', 'Prénom', 'Email', 'Téléphone', 'Niveau', 'CIN', 'Statut'],
+            ...studentsToExport.map(s => [
+                s.name || '',
+                s.surname || '',
+                s.email || '',
+                s.phone || '',
+                s.schoolLevel || '',
+                s.cin || '',
+                s.active ? 'Actif' : 'Inactif'
+            ])
+        ].map(row => row.join(',')).join('\n');
+        
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `eleves-${new Date().toISOString().split('T')[0]}.csv`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+    };
+
+    const handleToggleStatus = async (studentId: string, currentStatus: boolean) => {
+        try {
+            await updateStudent(studentId, { active: !currentStatus });
+            fetchStudents();
+        } catch (error) {
+            console.error('Failed to update student status:', error);
+        }
+    };
+
+    const handleQuickEdit = (student: any) => {
+        setQuickEditStudent(student);
+        setQuickEditData({
+            name: student.name || '',
+            surname: student.surname || '',
+            email: student.email || '',
+            phone: student.phone || '',
+            schoolLevel: student.schoolLevel || 'LYCEE'
+        });
+        setIsQuickEditOpen(true);
     };
 
     const handleOpenGroupModal = (student: any) => {
@@ -97,8 +203,20 @@ export default function StudentsPage() {
     };
 
     const handleStudentAdded = () => {
+        setIsAddMode(false);
+        setEditingStudent(null);
         fetchStudents();
-        handleCloseAddView();
+    };
+
+    const handleSaveQuickEdit = async () => {
+        try {
+            await updateStudent(quickEditStudent.id, quickEditData);
+            setIsQuickEditOpen(false);
+            setQuickEditStudent(null);
+            fetchStudents();
+        } catch (error) {
+            console.error('Failed to update student:', error);
+        }
     };
 
     const filteredStudents = students.filter(student => {
@@ -132,6 +250,13 @@ export default function StudentsPage() {
 
                 {!isAddMode && (
                     <div className="flex gap-3">
+                        <button
+                            onClick={() => setIsAddMode(true)}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl font-medium transition-colors flex items-center gap-2 shadow-sm"
+                        >
+                            <Plus size={18} />
+                            Nouvel Élève
+                        </button>
                         <button className="p-2.5 text-slate-600 hover:bg-slate-100 rounded-xl transition-colors border border-slate-200 bg-white shadow-sm">
                             <Download size={20} />
                         </button>
@@ -180,6 +305,39 @@ export default function StudentsPage() {
                 {/* LIST VIEW */}
                 {!isAddMode && (
                     <>
+                        {/* Bulk Actions Bar */}
+                        {selectedStudents.length > 0 && (
+                            <div className="p-4 bg-blue-50 border-b border-blue-200 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                    <span className="text-sm font-medium text-blue-900">
+                                        {selectedStudents.length} élève(s) sélectionné(s)
+                                    </span>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={handleBulkExport}
+                                        className="px-3 py-1.5 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+                                    >
+                                        <Download size={14} />
+                                        Exporter
+                                    </button>
+                                    <button
+                                        onClick={handleBulkDelete}
+                                        className="px-3 py-1.5 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors flex items-center gap-2"
+                                    >
+                                        <Trash2 size={14} />
+                                        Supprimer
+                                    </button>
+                                    <button
+                                        onClick={() => setSelectedStudents([])}
+                                        className="px-3 py-1.5 bg-gray-500 text-white text-sm rounded-lg hover:bg-gray-600 transition-colors"
+                                    >
+                                        Annuler
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
                         {/* Filters Bar */}
                         <div className="p-4 border-b border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row gap-4">
                             <div className="relative flex-1">
@@ -193,16 +351,13 @@ export default function StudentsPage() {
                                 />
                             </div>
                             <div className="flex gap-3">
-                                <select
-                                    value={filterLevel}
-                                    onChange={(e) => setFilterLevel(e.target.value)}
-                                    className="px-4 py-2 bg-slate-50 dark:bg-slate-900 border-none rounded-xl focus:ring-2 focus:ring-blue-500 outline-none cursor-pointer"
+                                <button
+                                    onClick={() => setIsAddMode(true)}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl font-medium transition-colors flex items-center gap-2 shadow-sm"
                                 >
-                                    <option value="ALL">Tous les niveaux</option>
-                                    <option value="PRIMAIRE">Primaire</option>
-                                    <option value="COLLEGE">Collège</option>
-                                    <option value="LYCEE">Lycée</option>
-                                </select>
+                                    <Plus size={18} />
+                                    Nouvel Élève
+                                </button>
                                 <button
                                     onClick={() => setShowFilters(!showFilters)}
                                     className={`p-2 rounded-xl transition-colors ${showFilters ? 'bg-blue-50 text-blue-600' : 'bg-slate-50 text-slate-500 hover:bg-slate-100'}`}
@@ -211,12 +366,53 @@ export default function StudentsPage() {
                                 </button>
                             </div>
                         </div>
-
-                        {/* Table */}
+                        {/* Expanded Filters */}
+                        {showFilters && (
+                            <div className="p-4 border-b border-slate-100 dark:border-slate-700 bg-slate-25">
+                                <div className="flex flex-wrap gap-4 items-center">
+                                    <div className="flex items-center gap-2">
+                                        <label className="text-sm font-medium text-slate-600">Niveau:</label>
+                                        <select
+                                            value={filterLevel}
+                                            onChange={(e) => setFilterLevel(e.target.value)}
+                                            className="px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-sm"
+                                        >
+                                            <option value="ALL">Tous les niveaux</option>
+                                            <option value="PRIMAIRE">Primaire</option>
+                                            <option value="COLLEGE">Collège</option>
+                                            <option value="LYCEE">Lycée</option>
+                                        </select>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <label className="text-sm font-medium text-slate-600">Actions:</label>
+                                        <button
+                                            onClick={() => handleSelectAll(true)}
+                                            className="px-3 py-1.5 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors text-sm font-medium"
+                                        >
+                                            Tout sélectionner
+                                        </button>
+                                        <button
+                                            onClick={() => setSelectedStudents([])}
+                                            className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
+                                        >
+                                            Tout désélectionner
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
                                 <thead className="bg-slate-50/50 dark:bg-slate-900/50 text-slate-500 font-bold text-xs uppercase tracking-wider">
                                     <tr>
+                                        <th className="px-6 py-4">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedStudents.length === filteredStudents.length && filteredStudents.length > 0}
+                                                onChange={(e) => handleSelectAll(e.target.checked)}
+                                                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                            />
+                                        </th>
                                         <th className="px-6 py-4 flex items-center gap-2">
                                             <UserIcon size={14} /> Étudiant
                                         </th>
@@ -241,7 +437,7 @@ export default function StudentsPage() {
                                 <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
                                     {isLoading ? (
                                         <tr>
-                                            <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
+                                            <td colSpan={6} className="px-6 py-8 text-center text-slate-500">
                                                 <div className="flex justify-center items-center gap-3">
                                                     <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                                                     Chargement des données...
@@ -250,7 +446,7 @@ export default function StudentsPage() {
                                         </tr>
                                     ) : filteredStudents.length === 0 ? (
                                         <tr>
-                                            <td colSpan={5} className="px-6 py-12 text-center text-slate-400">
+                                            <td colSpan={6} className="px-6 py-12 text-center text-slate-400">
                                                 <div className="mx-auto w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-3">
                                                     <Search size={32} className="opacity-50" />
                                                 </div>
@@ -260,6 +456,14 @@ export default function StudentsPage() {
                                         </tr>
                                     ) : filteredStudents.map((student) => (
                                         <tr key={student.id} className="hover:bg-blue-50/30 dark:hover:bg-slate-700/30 transition-all duration-200 group border-b border-slate-50 dark:border-slate-700/50">
+                                            <td className="px-6 py-5">
+                                                <input
+                                                    type="checkbox"
+                                                    checked={selectedStudents.includes(student.id.toString())}
+                                                    onChange={(e) => handleSelectStudent(student.id, e.target.checked)}
+                                                    className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                                />
+                                            </td>
                                             <td className="px-6 py-5">
                                                 <div className="flex items-center gap-4">
                                                     <div className="relative">
@@ -363,6 +567,17 @@ export default function StudentsPage() {
                                                         <Eye size={18} />
                                                     </button>
                                                     <button
+                                                        onClick={() => handleToggleStatus(student.id, student.active)}
+                                                        className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all ${
+                                                            student.active 
+                                                                ? 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20' 
+                                                                : 'text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20'
+                                                        }`}
+                                                        title={student.active ? 'Désactiver' : 'Activer'}
+                                                    >
+                                                        <Shield size={18} />
+                                                    </button>
+                                                    <button
                                                         onClick={() => handleOpenGroupModal(student)}
                                                         className="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-all"
                                                         title="Assigner au groupe"
@@ -377,14 +592,14 @@ export default function StudentsPage() {
                                                         <Key size={18} />
                                                     </button>
                                                     <button
-                                                        onClick={() => handleEdit(student)}
+                                                        onClick={() => handleQuickEdit(student)}
                                                         className="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-orange-600 hover:bg-orange-50 dark:hover:bg-orange-900/20 rounded-xl transition-all"
-                                                        title="Modifier"
+                                                        title="Modifier rapidement"
                                                     >
                                                         <Edit size={18} />
                                                     </button>
                                                     <button
-                                                        onClick={() => handleDelete(student.id)}
+                                                        onClick={() => handleDelete(student)}
                                                         className="w-9 h-9 flex items-center justify-center text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"
                                                         title="Supprimer"
                                                     >
@@ -447,6 +662,90 @@ export default function StudentsPage() {
                     onClose={() => setIsLoginModalOpen(false)}
                     student={selectedStudentForLogin}
                 />
+            )}
+
+            {/* Quick Edit Modal */}
+            {isQuickEditOpen && quickEditStudent && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl shadow-xl max-w-md w-full">
+                        <div className="p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <h3 className="text-lg font-semibold text-slate-900">
+                                    Modifier {quickEditStudent.name} {quickEditStudent.surname}
+                                </h3>
+                                <button
+                                    onClick={() => setIsQuickEditOpen(false)}
+                                    className="text-slate-400 hover:text-slate-600"
+                                >
+                                    <X size={20} />
+                                </button>
+                            </div>
+                            
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-600 mb-1">Nom</label>
+                                    <Input
+                                        value={quickEditData.name}
+                                        onChange={(e) => setQuickEditData({...quickEditData, name: e.target.value})}
+                                        className="w-full"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-600 mb-1">Prénom</label>
+                                    <Input
+                                        value={quickEditData.surname}
+                                        onChange={(e) => setQuickEditData({...quickEditData, surname: e.target.value})}
+                                        className="w-full"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-600 mb-1">Email</label>
+                                    <Input
+                                        type="email"
+                                        value={quickEditData.email}
+                                        onChange={(e) => setQuickEditData({...quickEditData, email: e.target.value})}
+                                        className="w-full"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-600 mb-1">Téléphone</label>
+                                    <Input
+                                        value={quickEditData.phone}
+                                        onChange={(e) => setQuickEditData({...quickEditData, phone: e.target.value})}
+                                        className="w-full"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-600 mb-1">Niveau Scolaire</label>
+                                    <select
+                                        value={quickEditData.schoolLevel}
+                                        onChange={(e) => setQuickEditData({...quickEditData, schoolLevel: e.target.value})}
+                                        className="w-full px-3 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                                    >
+                                        <option value="PRIMAIRE">Primaire</option>
+                                        <option value="COLLEGE">Collège</option>
+                                        <option value="LYCEE">Lycée</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div className="flex gap-3 mt-6">
+                                <button
+                                    onClick={handleSaveQuickEdit}
+                                    className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+                                >
+                                    Enregistrer
+                                </button>
+                                <button
+                                    onClick={() => setIsQuickEditOpen(false)}
+                                    className="px-4 py-2 text-slate-600 hover:text-slate-800 transition-colors"
+                                >
+                                    Annuler
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             )}
         </div>
     );

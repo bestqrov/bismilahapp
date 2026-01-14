@@ -6,18 +6,44 @@ import * as teacherService from './teacher.service';
 export const getDashboard = async (req: AuthRequest, res: Response) => {
     try {
         const teacherId = req.user!.id;
-        const [groups, courses, sessions, notifications] = await Promise.all([
+        const [groups, courses, sessions, notifications, attendanceStats, studentStats] = await Promise.all([
             teacherService.getTeacherGroups(teacherId),
             teacherService.getTeacherCourses(teacherId),
             teacherService.getTeacherSessions(teacherId),
             teacherService.getNotifications(teacherId),
+            teacherService.getAttendanceStats(teacherId),
+            teacherService.getStudentAttendanceStats(teacherId),
         ]);
+
+        // Calculate additional statistics
+        const totalStudents = new Set(
+            groups.flatMap(group => group.students.map(student => student.id))
+        ).size;
+
+        const todaySessions = sessions.filter(session => {
+            const sessionDate = new Date(session.date);
+            const today = new Date();
+            return sessionDate.toDateString() === today.toDateString();
+        });
+
+        const recentActivities = await teacherService.getRecentActivities(teacherId);
 
         sendSuccess(res, {
             groups,
             courses,
             sessions,
             notifications,
+            stats: {
+                totalStudents,
+                totalGroups: groups.length,
+                totalSessions: sessions.length,
+                todaySessions: todaySessions.length,
+                attendanceRate: attendanceStats.averageAttendance,
+                totalNotifications: notifications.length,
+            },
+            attendanceStats,
+            studentStats,
+            recentActivities,
         }, 'Dashboard data retrieved', 200);
     } catch (error: any) {
         sendError(res, error.message, 'Failed to get dashboard', 500);
@@ -41,6 +67,17 @@ export const getCourses = async (req: AuthRequest, res: Response) => {
         sendSuccess(res, courses, 'Courses retrieved', 200);
     } catch (error: any) {
         sendError(res, error.message, 'Failed to get courses', 500);
+    }
+};
+
+export const createCourse = async (req: AuthRequest, res: Response) => {
+    try {
+        const teacherId = req.user!.id;
+        const courseData = { ...req.body, teacherId };
+        const course = await teacherService.createCourse(courseData);
+        sendSuccess(res, course, 'Course created', 201);
+    } catch (error: any) {
+        sendError(res, error.message, 'Failed to create course', 400);
     }
 };
 
@@ -128,7 +165,8 @@ export const sendNotificationHandler = async (req: AuthRequest, res: Response) =
 
 export const getRooms = async (req: AuthRequest, res: Response) => {
     try {
-        const rooms = await teacherService.getAvailableRooms();
+        const { date, startTime, endTime } = req.query;
+        const rooms = await teacherService.getAvailableRooms(date as string, startTime as string, endTime as string);
         sendSuccess(res, rooms, 'Rooms retrieved', 200);
     } catch (error: any) {
         sendError(res, error.message, 'Failed to get rooms', 500);

@@ -12,6 +12,7 @@ router.use(roleMiddleware('TEACHER'));
 router.get('/dashboard', teacherController.getDashboard);
 router.get('/groups', teacherController.getGroups);
 router.get('/courses', teacherController.getCourses);
+router.post('/courses', teacherController.createCourse);
 router.get('/sessions', teacherController.getSessions);
 router.post('/sessions', teacherController.createSessionHandler);
 router.post('/attendance', teacherController.markAttendanceHandler);

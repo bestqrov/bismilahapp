@@ -1,13 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Bell, Search, User, Calendar, Clock, Sun, Moon } from 'lucide-react';
+import { Bell, Search, User, Calendar, Clock, Sun, Moon, Home, ArrowLeft } from 'lucide-react';
+import { useRouter, usePathname } from 'next/navigation';
 import useAuthStore from '@/store/useAuthStore';
 
 export default function TeacherTopBar() {
   const [currentTime, setCurrentTime] = useState<Date | null>(null);
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const user = useAuthStore(state => state.user);
+  const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     // Set initial time on client mount
@@ -58,6 +61,15 @@ export default function TeacherTopBar() {
         <div className="flex items-center justify-between">
           {/* Left Section - Welcome Message */}
           <div className="flex items-center space-x-4">
+            {pathname !== '/teacher' && (
+              <button
+                onClick={() => router.push('/teacher')}
+                className="flex items-center space-x-2 px-3 py-2 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span>Retour au Tableau de Bord</span>
+              </button>
+            )}
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-lg">
                 <User className="w-5 h-5 text-white" />

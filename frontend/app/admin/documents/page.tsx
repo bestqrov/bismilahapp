@@ -32,15 +32,20 @@ export default function DocumentsPage() {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
+    const [selectedType, setSelectedType] = useState<'all' | 'soutien' | 'formation'>('all');
 
     useEffect(() => {
-        fetchSoutienStudents();
-    }, []);
+        fetchStudents();
+    }, [selectedType]);
 
-    const fetchSoutienStudents = async () => {
+    const fetchStudents = async () => {
         try {
             setLoading(true);
-            const response = await api.get('/documents/students');
+            const params = new URLSearchParams();
+            if (selectedType !== 'all') {
+                params.append('type', selectedType === 'soutien' ? 'SOUTIEN' : 'FORMATION');
+            }
+            const response = await api.get(`/documents/students?${params.toString()}`);
             setStudents(response.data.data);
         } catch (error) {
             console.error('Failed to fetch students:', error);
@@ -52,9 +57,7 @@ export default function DocumentsPage() {
     const filteredStudents = students.filter(student => {
         const matchesSearch = `${student.name} ${student.surname}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
             student.cin?.toLowerCase().includes(searchTerm.toLowerCase());
-        // Show all students with inscriptions
-        const hasInscriptions = student.inscriptions && student.inscriptions.length > 0;
-        return matchesSearch && hasInscriptions;
+        return matchesSearch;
     });
 
     const handlePrint = () => {
@@ -143,6 +146,46 @@ export default function DocumentsPage() {
 
             {!selectedStudent ? (
                 <>
+                    {/* Filter Tabs */}
+                    <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
+                        <div className="flex flex-wrap gap-2 mb-4">
+                            <button
+                                onClick={() => setSelectedType('all')}
+                                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                                    selectedType === 'all'
+                                        ? 'bg-blue-600 text-white'
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                }`}
+                            >
+                                Tous les élèves
+                            </button>
+                            <button
+                                onClick={() => setSelectedType('soutien')}
+                                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                                    selectedType === 'soutien'
+                                        ? 'bg-green-600 text-white'
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                }`}
+                            >
+                                Soutien Scolaire
+                            </button>
+                            <button
+                                onClick={() => setSelectedType('formation')}
+                                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                                    selectedType === 'formation'
+                                        ? 'bg-purple-600 text-white'
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                }`}
+                            >
+                                Formation Pro
+                            </button>
+                        </div>
+                        <p className="text-sm text-gray-600">
+                            {selectedType === 'all' && 'Affichage de tous les élèves inscrits'}
+                            {selectedType === 'soutien' && 'Affichage des élèves en soutien scolaire uniquement'}
+                            {selectedType === 'formation' && 'Affichage des élèves en formation professionnelle uniquement'}
+                        </p>
+                    </div>
                     {/* Search */}
                     <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
                         <div className="relative">
@@ -160,7 +203,9 @@ export default function DocumentsPage() {
                     {/* Students List */}
                     <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-200">
                         <h2 className="text-xl font-bold text-gray-800 mb-4">
-                            Tous les élèves inscrits
+                            {selectedType === 'all' && 'Tous les élèves inscrits'}
+                            {selectedType === 'soutien' && 'Élèves en Soutien Scolaire'}
+                            {selectedType === 'formation' && 'Élèves en Formation Professionnelle'}
                         </h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                             {filteredStudents.map((student) => (

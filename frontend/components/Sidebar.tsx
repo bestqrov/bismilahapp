@@ -13,7 +13,8 @@ import {
   Menu,
   X,
   Building,
-  Calendar
+  Calendar,
+  QrCode
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useSchoolProfile } from '@/hooks/useSchoolProfile';
@@ -198,8 +199,8 @@ export function Sidebar({ currentPath, role }: SidebarProps) {
     },
     {
       id: 'card',
-      label: 'Ma Carte',
-      icon: GraduationCap,
+      label: 'Mon QR Code',
+      icon: QrCode,
       path: '/student/card',
       activeColor: 'bg-[#334155]/50 border-[#10B981]',
       iconColor: 'text-[#10B981]'

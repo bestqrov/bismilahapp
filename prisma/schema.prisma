@@ -165,7 +165,7 @@ model Parent {
 model StudentParent {
   id        Int     @id @default(autoincrement())
   studentId Int
-  student   Student @relation(fields: [studentId], references: [id])
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
   parentId  Int
   parent    Parent  @relation(fields: [parentId], references: [id])
   relation  String? // father, mother, guardian
@@ -235,7 +235,7 @@ model Assignment {
 model Grade {
   id        Int      @id @default(autoincrement())
   studentId Int
-  student   Student @relation(fields: [studentId], references: [id])
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
   subject   String
   grade     Float
   teacherId Int
@@ -380,7 +380,7 @@ model StudentNotification {
   message   String
   type      String // holiday, exam, announcement, payment
   studentId Int?
-  student   Student? @relation(fields: [studentId], references: [id])
+  student   Student? @relation(fields: [studentId], references: [id], onDelete: Cascade)
   parentId  Int?
   parent    Parent?  @relation(fields: [parentId], references: [id])
   isRead    Boolean  @default(false)

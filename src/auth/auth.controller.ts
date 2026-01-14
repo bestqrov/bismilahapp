@@ -155,3 +155,16 @@ export const getMe = async (req: Request, res: Response): Promise<void> => {
         sendError(res, error.message, 'Failed to fetch user profile', 500);
     }
 };
+
+export const adminExists = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const prisma = (await import('../config/database')).default;
+        const existingAdmin = await prisma.user.findFirst({
+            where: { role: 'ADMIN' },
+        });
+
+        sendSuccess(res, { exists: !!existingAdmin }, 'Admin existence checked', 200);
+    } catch (error: any) {
+        sendError(res, error.message, 'Failed to check admin existence', 500);
+    }
+};

@@ -1,7 +1,18 @@
 import prisma from '../../config/database';
 
-export const getStudentsForDocuments = async () => {
+export const getStudentsForDocuments = async (filters?: { type?: string }) => {
+    const whereClause: any = {};
+
+    if (filters?.type) {
+        whereClause.inscriptions = {
+            some: {
+                type: filters.type.toUpperCase()
+            }
+        };
+    }
+
     const students = await prisma.student.findMany({
+        where: whereClause,
         include: {
             inscriptions: {
                 orderBy: {
