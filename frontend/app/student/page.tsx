@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Sidebar } from '@/components/Sidebar';
@@ -23,16 +23,14 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
+import { Student, Assignment, Notification, Payment, Group } from '@/types';
+
 interface DashboardData {
-    student: {
-        id: string;
-        name: string;
-        schoolLevel?: string;
-        groups: any[];
-    };
-    assignments: any[];
-    notifications: any[];
-    payments: any[];
+    student: Student;
+    assignments: Assignment[];
+    notifications: Notification[];
+    payments: Payment[];
+    groups: Group[];
 }
 
 export default function StudentDashboard() {
@@ -41,13 +39,7 @@ export default function StudentDashboard() {
     const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
     const [loading, setLoading] = useState(true);
 
-    useEffect(() => {
-        if (user?.id) {
-            fetchDashboard();
-        }
-    }, [user]);
-
-    const fetchDashboard = async () => {
+    const fetchDashboard = useCallback(async () => {
         try {
             const response = await fetch(`/api/students/${user!.id}/dashboard`);
             const data = await response.json();
@@ -59,7 +51,13 @@ export default function StudentDashboard() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [user]);
+
+    useEffect(() => {
+        if (user?.id) {
+            fetchDashboard();
+        }
+    }, [user, fetchDashboard]);
 
     if (loading) return <div>Chargement...</div>;
 
@@ -172,7 +170,7 @@ export default function StudentDashboard() {
                                             </div>
                                             <div>
                                                 <h3 className="text-lg font-semibold text-gray-900">Mon QR Code</h3>
-                                                <p className="text-sm text-gray-600">Carte d'identité numérique</p>
+                                                <p className="text-sm text-gray-600">Carte d&apos;identité numérique</p>
                                             </div>
                                         </div>
 
@@ -226,7 +224,7 @@ export default function StudentDashboard() {
                                             <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
                                                 <div className="flex items-center gap-2">
                                                     <Clock className="h-4 w-4 text-blue-600" />
-                                                    <span className="text-sm font-medium text-gray-700">Aujourd'hui</span>
+                                                    <span className="text-sm font-medium text-gray-700">Aujourd&apos;hui</span>
                                                 </div>
                                                 <span className="text-sm text-blue-600 font-medium">2 séances</span>
                                             </div>
@@ -240,7 +238,7 @@ export default function StudentDashboard() {
                                         </div>
 
                                         <Button className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white border-0 shadow-md hover:shadow-lg transition-all duration-300 group-hover:scale-105">
-                                            Voir l'emploi du temps
+                                            Voir l&apos;emploi du temps
                                         </Button>
                                     </div>
                                 </div>
@@ -354,7 +352,7 @@ export default function StudentDashboard() {
                                         <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
                                         <div className="flex-1">
                                             <p className="text-sm font-medium text-gray-900">Présence marquée</p>
-                                            <p className="text-xs text-gray-600">Mathématiques - Aujourd'hui 14:00</p>
+                                            <p className="text-xs text-gray-600">Mathématiques - Aujourd&apos;hui 14:00</p>
                                         </div>
                                     </div>
                                     <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
@@ -390,7 +388,7 @@ export default function StudentDashboard() {
                             </div>
 
                             <div className="space-y-4">
-                                {dashboardData?.notifications.slice(0, 3).map((notif: any) => (
+                                {dashboardData?.notifications.slice(0, 3).map((notif: Notification) => (
                                     <div key={notif.id} className="flex items-start gap-4 p-4 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100 hover:shadow-md transition-all duration-300">
                                         <div className="w-10 h-10 bg-indigo-100 rounded-xl flex items-center justify-center flex-shrink-0">
                                             <Bell className="h-5 w-5 text-indigo-600" />
@@ -407,7 +405,7 @@ export default function StudentDashboard() {
                                                 })}
                                             </p>
                                         </div>
-                                        {!notif.read && (
+                                        {!notif.isRead && (
                                             <div className="w-2 h-2 bg-indigo-500 rounded-full flex-shrink-0 mt-2"></div>
                                         )}
                                     </div>

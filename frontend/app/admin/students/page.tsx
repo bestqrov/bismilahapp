@@ -27,13 +27,14 @@ import {
 import { getStudents, deleteStudent, updateStudent } from '@/lib/services/students';
 import { groupsService } from '@/lib/services/groups'; // Adjust path if needed
 import AddStudentForm from '@/components/forms/AddStudentForm'; // Adjust path
+import { Student } from '@/types';
 import StudentGroupModal from '@/components/StudentGroupModal'; // Adjust path
 import StudentLoginModal from '@/components/StudentLoginModal'; // New import
 import Input from '@/components/Input'; // Add Input import
 
 export default function StudentsPage() {
     const router = useRouter();
-    const [students, setStudents] = useState<any[]>([]);
+    const [students, setStudents] = useState<Student[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterLevel, setFilterLevel] = useState('ALL');
@@ -56,7 +57,7 @@ export default function StudentsPage() {
     const [quickEditStudent, setQuickEditStudent] = useState<any>(null);
     const [quickEditData, setQuickEditData] = useState<any>({});
 
-    const [selectedStudents, setSelectedStudents] = useState<string[]>([]);
+    const [selectedStudents, setSelectedStudents] = useState<number[]>([]);
     const [showBulkActions, setShowBulkActions] = useState(false);
 
     useEffect(() => {
@@ -110,24 +111,25 @@ export default function StudentsPage() {
     };
 
     const handleSelectStudent = (studentId: string, checked: boolean) => {
+        const id = parseInt(studentId);
         if (checked) {
-            setSelectedStudents(prev => [...prev, studentId]);
+            setSelectedStudents(prev => [...prev, id]);
         } else {
-            setSelectedStudents(prev => prev.filter(id => id !== studentId));
+            setSelectedStudents(prev => prev.filter(id => id !== id));
         }
     };
 
     const handleBulkDelete = async () => {
         if (selectedStudents.length === 0) return;
 
-        const studentsToDelete = filteredStudents.filter(s => selectedStudents.includes(s.id.toString()));
+        const studentsToDelete = filteredStudents.filter(s => selectedStudents.includes(s.id));
         const studentNames = studentsToDelete.map(s => `${s.name} ${s.surname}`).join(', ');
 
         const confirmMessage = `Êtes-vous sûr de vouloir supprimer ${selectedStudents.length} élève(s) ?\n\nÉlèves concernés:\n${studentNames}\n\nCette action est irréversible.`;
 
         if (window.confirm(confirmMessage)) {
             try {
-                await Promise.all(selectedStudents.map(id => deleteStudent(id)));
+                await Promise.all(selectedStudents.map(id => deleteStudent(id.toString())));
                 alert(`${selectedStudents.length} élève(s) supprimé(s) avec succès.`);
                 setSelectedStudents([]);
                 fetchStudents();
@@ -143,7 +145,7 @@ export default function StudentsPage() {
 
     const handleBulkExport = () => {
         // Export selected students to CSV
-        const studentsToExport = filteredStudents.filter(s => selectedStudents.includes(s.id.toString()));
+        const studentsToExport = filteredStudents.filter(s => selectedStudents.includes(s.id));
         const csvContent = [
             ['Nom', 'Prénom', 'Email', 'Téléphone', 'Niveau', 'CIN', 'Statut'],
             ...studentsToExport.map(s => [
@@ -225,7 +227,7 @@ export default function StudentsPage() {
             student.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             student.parentName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             student.phone?.includes(searchQuery); // Phone might be number or string
-        const matchesLevel = filterLevel === 'ALL' || student.level === filterLevel;
+        const matchesLevel = filterLevel === 'ALL' || student.schoolLevel === filterLevel;
         return matchesSearch && matchesLevel;
     });
 
@@ -459,8 +461,8 @@ export default function StudentsPage() {
                                             <td className="px-6 py-5">
                                                 <input
                                                     type="checkbox"
-                                                    checked={selectedStudents.includes(student.id.toString())}
-                                                    onChange={(e) => handleSelectStudent(student.id, e.target.checked)}
+                                                    checked={selectedStudents.includes(student.id)}
+                                                    onChange={(e) => handleSelectStudent(student.id.toString(), e.target.checked)}
                                                     className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                                                 />
                                             </td>
@@ -567,7 +569,7 @@ export default function StudentsPage() {
                                                         <Eye size={18} />
                                                     </button>
                                                     <button
-                                                        onClick={() => handleToggleStatus(student.id, student.active)}
+                                                        onClick={() => handleToggleStatus(student.id.toString(), student.active)}
                                                         className={`w-9 h-9 flex items-center justify-center rounded-xl transition-all ${
                                                             student.active 
                                                                 ? 'text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20' 

@@ -76,7 +76,32 @@ export interface Payment {
     updatedAt: string;
 }
 
-// Attendance types
+// Assignment types
+export interface Assignment {
+    id: string;
+    title: string;
+    description: string;
+    subject: string;
+    teacher: string;
+    dueDate: string;
+    status: 'pending' | 'completed' | 'overdue';
+    priority: 'low' | 'medium' | 'high';
+}
+
+// Notification types
+export interface Notification {
+    id: number;
+    title: string;
+    message: string;
+    type: string;
+    isRead: boolean;
+    createdAt: string;
+    studentId?: number;
+    student?: {
+        name: string;
+        surname: string;
+    };
+}
 export interface Attendance {
     id: string;
     studentId: string;

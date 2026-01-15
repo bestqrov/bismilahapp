@@ -377,7 +377,7 @@ export default function TeacherAttendance() {
                                     </Button>
                                 </div>
                                 <p className="text-sm text-blue-600 mt-1">
-                                    Cliquez sur "Présent" ou "Absent" pour chaque élève, ou utilisez le scanner QR
+                                    Cliquez sur &quot;Présent&quot; ou &quot;Absent&quot; pour chaque élève, ou utilisez le scanner QR
                                 </p>
                             </div>
 

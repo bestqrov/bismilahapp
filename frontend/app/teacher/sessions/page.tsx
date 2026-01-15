@@ -120,7 +120,7 @@ export default function TeacherSessions() {
                     <CardContent className="p-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm font-medium text-green-600 mb-1">Séances Aujourd'hui</p>
+                                <p className="text-sm font-medium text-green-600 mb-1">Séances Aujourd&apos;hui</p>
                                 <p className="text-3xl font-bold text-green-800">
                                     {sessions.filter(s => new Date(s.date).toDateString() === new Date().toDateString()).length}
                                 </p>

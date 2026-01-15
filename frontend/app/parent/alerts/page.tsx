@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Sidebar } from '@/components/Sidebar';
@@ -29,13 +29,7 @@ export default function ParentAlerts() {
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState<'all' | 'unread' | 'read'>('all');
 
-    useEffect(() => {
-        if (user?.id) {
-            fetchNotifications();
-        }
-    }, [user]);
-
-    const fetchNotifications = async () => {
+    const fetchNotifications = useCallback(async () => {
         try {
             const response = await fetch(`/api/parents/${user!.id}/notifications`);
             const data = await response.json();
@@ -47,7 +41,13 @@ export default function ParentAlerts() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [user]);
+
+    useEffect(() => {
+        if (user?.id) {
+            fetchNotifications();
+        }
+    }, [user, fetchNotifications]);
 
     const markAsRead = async (notificationId: number) => {
         try {
@@ -82,7 +82,7 @@ export default function ParentAlerts() {
         const now = new Date();
         const diffInHours = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60));
 
-        if (diffInHours < 1) return 'À l\'instant';
+        if (diffInHours < 1) return 'À l&apos;instant';
         if (diffInHours < 24) return `Il y a ${diffInHours}h`;
 
         const diffInDays = Math.floor(diffInHours / 24);
@@ -212,7 +212,7 @@ export default function ParentAlerts() {
                             <p className="text-gray-600">
                                 {filter === 'unread'
                                     ? 'Vous avez lu toutes vos notifications.'
-                                    : 'Vous n\'avez reçu aucune notification pour le moment.'
+                                    : 'Vous n&apos;avez reçu aucune notification pour le moment.'
                                 }
                             </p>
                         </Card>
