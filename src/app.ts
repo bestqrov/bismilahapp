@@ -59,14 +59,17 @@ apiRouter.use('/teacher', teacherRoutes);
 app.use('/api', apiRouter);
 
 // ================= FRONTEND STATIC =================
-// path ديال build ديال frontend (Vite)
 const frontendPath = path.join(__dirname, '..', 'frontend', 'dist');
-// app.use(express.static(frontendPath));
+app.use(express.static(frontendPath));
 
-// أي route ماشي API → frontend
-// app.get('*', (_req, res) => {
-//     res.sendFile(path.join(frontendPath, 'index.html'));
-// });
+// Any route not API → serve frontend
+app.get('*', (req, res) => {
+    // Skip API routes
+    if (req.path.startsWith('/api')) {
+        return res.status(404).json({ error: 'API endpoint not found' });
+    }
+    res.sendFile(path.join(frontendPath, 'index.html'));
+});
 
 // ================= ERROR HANDLING =================
 app.use(errorMiddleware);

@@ -2,8 +2,8 @@
 const nextConfig = {
     reactStrictMode: true,
     optimizeFonts: false,
-    // output: 'export',  // Commented out for development
-    // distDir: 'dist',   // Commented out for development
+    output: 'export',
+    distDir: 'dist',
     images: {
         unoptimized: true,
         domains: ['localhost'],
