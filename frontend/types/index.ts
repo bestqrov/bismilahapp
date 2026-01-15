@@ -29,6 +29,7 @@ export interface Student {
     schoolLevel?: string;
     currentSchool?: string;
     subjects?: any; // JSON
+    groups?: any[]; // Groups the student belongs to
     active: boolean;
     createdAt: string;
     updatedAt: string;
@@ -145,6 +146,7 @@ export interface StudentFormData {
     schoolLevel?: string;
     currentSchool?: string;
     subjects?: any;
+    active?: boolean;
 }
 
 export interface InscriptionFormData {

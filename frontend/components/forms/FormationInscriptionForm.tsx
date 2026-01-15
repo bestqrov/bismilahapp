@@ -116,6 +116,36 @@ export default function FormationInscriptionForm({ onSuccessRedirect, onSuccess,
         }
     };
 
+    const createStudentAndInscriptions = async (existingStudentId?: number) => {
+        let studentId = existingStudentId;
+
+        if (!studentId) {
+            // Create new student
+            const studentData = await createStudent({
+                name: formData.name.split(' ')[0],
+                surname: formData.name.split(' ').slice(1).join(' ') || '.',
+                email: formData.email || undefined,
+                phone: formData.gsm,
+                cin: formData.cin,
+                address: formData.address,
+            } as any);
+            studentId = studentData.id;
+        }
+
+        // Create inscriptions for each selected formation
+        await Promise.all(formData.formation.map(async (formationId) => {
+            const formation = formations.find(f => f.id === formationId);
+            if (!formation) return;
+
+            await createInscription({
+                studentId: studentId,
+                type: 'FORMATION',
+                category: formation.name,
+                amount: formation.price,
+            } as any);
+        }));
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
@@ -176,34 +206,6 @@ export default function FormationInscriptionForm({ onSuccessRedirect, onSuccess,
         } finally {
             setLoading(false);
         }
-        let studentId = existingStudentId;
-
-        if (!studentId) {
-            // Create new student
-            const studentData = await createStudent({
-                name: formData.name.split(' ')[0],
-                surname: formData.name.split(' ').slice(1).join(' ') || '.',
-                email: formData.email || undefined,
-                phone: formData.gsm,
-                cin: formData.cin,
-                address: formData.address,
-            } as any);
-            studentId = studentData.id;
-        }
-
-        // Create inscriptions for each selected formation
-        await Promise.all(formData.formation.map(async (formationId) => {
-            const formation = formations.find(f => f.id === formationId);
-            if (!formation) return;
-
-            await createInscription({
-                studentId: studentId,
-                type: 'FORMATION',
-                category: formation.name,
-                amount: formation.price,
-                note: `Inscription Formation: ${formation.name}`
-            } as any);
-        }));
 
         alert('Inscription créée avec succès!');
         
@@ -234,9 +236,9 @@ export default function FormationInscriptionForm({ onSuccessRedirect, onSuccess,
         if (duplicateStudent) {
             if (duplicateStudent.cin === formData.cin) {
                 setDuplicateField('cin');
-            } else if (duplicateStudent.phone === formData.phone) {
-                setDuplicateField('phone');
-            } else if (duplicateStudent.name === formData.name && duplicateStudent.surname === formData.surname) {
+            } else if (duplicateStudent.phone === formData.gsm) {
+                setDuplicateField('gsm');
+            } else if (duplicateStudent.name === formData.name.split(' ')[0] && duplicateStudent.surname === (formData.name.split(' ').slice(1).join(' ') || '.')) {
                 setDuplicateField('name');
             }
         }
@@ -291,7 +293,8 @@ export default function FormationInscriptionForm({ onSuccessRedirect, onSuccess,
                 </div>
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            return (
+            <div className="max-w-6xl mx-auto p-6">
 
                 {/* Main Form Section */}
                 <div className="lg:col-span-2 space-y-6">
@@ -505,7 +508,12 @@ export default function FormationInscriptionForm({ onSuccessRedirect, onSuccess,
                                     <div className="flex justify-between items-end">
                                         <span className="text-gray-400 font-medium">Total à payer</span>
                                         <div className="text-right">
-                                            <span className="text-3xl font-bold text-white block">{total}</span>
+                                            <span className="text-3xl font-bold text-white block">
+                                                {formData.formation.reduce((sum, formationId) => {
+                                                    const formation = formations.find(f => f.id === formationId);
+                                                    return sum + (formation?.price || 0);
+                                                }, 0)}
+                                            </span>
                                             <span className="text-sm text-gray-400 font-medium">Dirhams (DH)</span>
                                         </div>
                                     </div>

@@ -6,7 +6,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { Sidebar } from '@/components/Sidebar';
 import TopBar from '@/components/TopBar';
 import { Card } from '@/components/ui/Card';
-import { Bell, AlertTriangle, Info, CheckCircle, Calendar, DollarSign, BookOpen, Clock } from 'lucide-react';
+import { Bell, AlertTriangle, Info, CheckCircle, Calendar, DollarSign, BookOpen, Clock, User } from 'lucide-react';
 
 interface Notification {
     id: number;

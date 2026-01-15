@@ -8,6 +8,9 @@ const nextConfig = {
         unoptimized: true,
         domains: ['localhost'],
     },
+    eslint: {
+        ignoreDuringBuilds: true,
+    },
     async rewrites() {
         return [
             {

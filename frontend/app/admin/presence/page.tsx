@@ -301,7 +301,7 @@ export default function PresencePage() {
                                             <>
                                                 <td key={`${week}-s1`} className="border border-gray-300 p-0 text-center">
                                                     <button
-                                                        onClick={() => toggleAttendance(student.id, week, 's1')}
+                                                        onClick={() => toggleAttendance(student.id.toString(), week, 's1')}
                                                         className={`w-full h-full px-2 py-3 print:py-2 transition-colors ${attendance[student.id.toString()]?.[week]?.s1
                                                             ? 'bg-green-100 hover:bg-green-200'
                                                             : 'bg-red-50 hover:bg-red-100'
@@ -312,7 +312,7 @@ export default function PresencePage() {
                                                 </td>
                                                 <td key={`${week}-s2`} className="border border-gray-300 p-0 text-center">
                                                     <button
-                                                        onClick={() => toggleAttendance(student.id, week, 's2')}
+                                                        onClick={() => toggleAttendance(student.id.toString(), week, 's2')}
                                                         className={`w-full h-full px-2 py-3 print:py-2 transition-colors ${attendance[student.id.toString()]?.[week]?.s2
                                                             ? 'bg-green-100 hover:bg-green-200'
                                                             : 'bg-red-50 hover:bg-red-100'
@@ -327,7 +327,7 @@ export default function PresencePage() {
                                             <input
                                                 type="text"
                                                 value={attendance[student.id.toString()]?.observation || ''}
-                                                onChange={(e) => updateObservation(student.id, e.target.value)}
+                                                onChange={(e) => updateObservation(student.id.toString(), e.target.value)}
                                                 className="w-full px-2 py-1 border-0 focus:ring-1 focus:ring-blue-500 rounded print:text-xs"
                                                 placeholder="..."
                                             />
