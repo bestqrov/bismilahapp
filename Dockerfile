@@ -18,8 +18,11 @@ COPY . .
 # Build the application
 RUN npm run build
 
-# Expose port
-EXPOSE 3000
+# Make start script executable
+RUN chmod +x start.sh
 
-# Start the server
-CMD ["npm", "start"]
+# Expose ports
+EXPOSE 3000 3001
+
+# Start the servers
+CMD ["./start.sh"]

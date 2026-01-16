@@ -63,12 +63,13 @@ const frontendPath = path.join(__dirname, '..', 'frontend', 'dist');
 app.use(express.static(frontendPath));
 
 // Any route not API → serve frontend
-app.get('*', (req, res) => {
+app.get('*', function (req, res) {
     // Skip API routes
     if (req.path.startsWith('/api')) {
         return res.status(404).json({ error: 'API endpoint not found' });
     }
     res.sendFile(path.join(frontendPath, 'index.html'));
+    return;
 });
 
 // ================= ERROR HANDLING =================
